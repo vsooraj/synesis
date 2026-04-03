@@ -25,6 +25,7 @@ import TicketsPage from "@/pages/tickets";
 import TicketDetailPage from "@/pages/ticket-detail";
 import TicketsWorkloadPage from "@/pages/tickets-workload";
 import InterviewsPage from "@/pages/interviews";
+import DepartmentsPage from "@/pages/departments";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -105,6 +106,9 @@ function Router() {
       </Route>
       <Route path="/interviews">
         {() => <ProtectedRoute component={InterviewsPage} roles={["super_admin", "hr_admin", "recruiter", "hiring_manager"]} />}
+      </Route>
+      <Route path="/departments">
+        {() => <ProtectedRoute component={DepartmentsPage} roles={["super_admin", "hr_admin"]} />}
       </Route>
       <Route component={NotFound} />
     </Switch>

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { enterpriseApi, type TicketDetail, type InterviewSlot, TICKET_STATUSES, TICKET_PRIORITIES, CANDIDATE_STAGES, PRIORITY_COLORS, SLA_BADGE } from "@/lib/enterprise-api";
+import { enterpriseApi, type TicketDetail, type InterviewSlot, type Department, TICKET_STATUSES, TICKET_PRIORITIES, CANDIDATE_STAGES, PRIORITY_COLORS, SLA_BADGE } from "@/lib/enterprise-api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -94,6 +94,7 @@ export default function TicketDetailPage() {
       setForm({
         title: t.title,
         priority: t.priority,
+        departmentId: t.departmentId ? String(t.departmentId) : "",
         department: t.department ?? "",
         location: t.location ?? "",
         salaryRange: t.salaryRange ?? "",
@@ -113,7 +114,9 @@ export default function TicketDetailPage() {
 
   const editMutation = useMutation({
     mutationFn: () => enterpriseApi.tickets.update(ticketId, {
-      ...form, openings: parseInt(form.openings) || 1,
+      ...form,
+      openings: parseInt(form.openings) || 1,
+      departmentId: form.departmentId ? parseInt(form.departmentId) : null,
       assignedTo: form.assignedTo.split(",").map(s => s.trim()).filter(Boolean),
     }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["ticket", ticketId] }); qc.invalidateQueries({ queryKey: ["tickets"] }); setEditOpen(false); },
@@ -135,6 +138,11 @@ export default function TicketDetailPage() {
   });
 
   const [scheduleForCandidate, setScheduleForCandidate] = React.useState<{ tcId: number; rpId: number | null; name: string } | null>(null);
+
+  const { data: departments = [] } = useQuery<Department[]>({
+    queryKey: ["departments"],
+    queryFn: () => enterpriseApi.departments.list(),
+  });
 
   const { data: interviews = [] } = useQuery<InterviewSlot[]>({
     queryKey: ["interviews", "ticket", ticketId],
@@ -335,7 +343,16 @@ export default function TicketDetailPage() {
               <div><Label>Openings</Label><Input type="number" value={form.openings ?? "1"} onChange={e => setForm(f => ({ ...f, openings: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Department</Label><Input value={form.department ?? ""} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} /></div>
+              <div>
+                <Label>Department</Label>
+                <Select value={form.departmentId ?? ""} onValueChange={v => setForm(f => ({ ...f, departmentId: v }))}>
+                  <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {departments.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div><Label>Location</Label><Input value={form.location ?? ""} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} /></div>
             </div>
             <div><Label>Salary Range</Label><Input value={form.salaryRange ?? ""} onChange={e => setForm(f => ({ ...f, salaryRange: e.target.value }))} placeholder="e.g. $120k–$160k" /></div>

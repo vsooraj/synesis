@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Pencil, Briefcase, Loader2, Building } from "lucide-react";
-import { enterpriseApi, type JobDescription } from "@/lib/enterprise-api";
+import { enterpriseApi, type JobDescription, type Department } from "@/lib/enterprise-api";
 import { useToast } from "@/hooks/use-toast";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -21,16 +21,18 @@ const STATUS_COLORS: Record<string, string> = {
 
 interface JDFormProps {
   initial?: Partial<JobDescription & { descriptionText: string }>;
-  onSave: (data: { title: string; company: string; descriptionText: string; status: string }) => Promise<void>;
+  onSave: (data: { title: string; company: string; descriptionText: string; status: string; departmentId?: number | null }) => Promise<void>;
   onClose: () => void;
   loading: boolean;
+  departments: Department[];
 }
 
-function JDForm({ initial, onSave, onClose, loading }: JDFormProps) {
+function JDForm({ initial, onSave, onClose, loading, departments }: JDFormProps) {
   const [title, setTitle] = React.useState(initial?.title || "");
   const [company, setCompany] = React.useState(initial?.company || "");
   const [descriptionText, setDescriptionText] = React.useState(initial?.descriptionText || "");
   const [status, setStatus] = React.useState(initial?.status || "Draft");
+  const [departmentId, setDepartmentId] = React.useState(initial?.departmentId ? String(initial.departmentId) : "");
 
   return (
     <div className="space-y-4">
@@ -38,16 +40,30 @@ function JDForm({ initial, onSave, onClose, loading }: JDFormProps) {
         <div><Label>Job Title *</Label><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Senior Backend Engineer" /></div>
         <div><Label>Company</Label><Input value={company} onChange={e => setCompany(e.target.value)} placeholder="Acme Corp" /></div>
       </div>
-      <div>
-        <Label>Status</Label>
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Draft">Draft</SelectItem>
-            <SelectItem value="Active">Active</SelectItem>
-            <SelectItem value="Closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>Status</Label>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Draft">Draft</SelectItem>
+              <SelectItem value="Active">Active</SelectItem>
+              <SelectItem value="Closed">Closed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {departments.length > 0 && (
+          <div>
+            <Label>Department</Label>
+            <Select value={departmentId} onValueChange={setDepartmentId}>
+              <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None</SelectItem>
+                {departments.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
       <div>
         <Label>Job Description *</Label>
@@ -55,7 +71,7 @@ function JDForm({ initial, onSave, onClose, loading }: JDFormProps) {
       </div>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
-        <Button onClick={() => onSave({ title, company, descriptionText, status })} disabled={loading || !title || !descriptionText}>
+        <Button onClick={() => onSave({ title, company, descriptionText, status, departmentId: departmentId ? parseInt(departmentId) : null })} disabled={loading || !title || !descriptionText}>
           {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : "Save Job"}
         </Button>
       </div>
@@ -75,13 +91,18 @@ export default function JobDescriptions() {
     queryFn: () => enterpriseApi.jobs.list(),
   });
 
+  const { data: departments = [] } = useQuery<Department[]>({
+    queryKey: ["departments"],
+    queryFn: () => enterpriseApi.departments.list(),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: number) => enterpriseApi.jobs.delete(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["enterprise", "jobs"] }); toast({ title: "Job removed" }); },
     onError: (err) => toast({ variant: "destructive", title: "Delete failed", description: err.message }),
   });
 
-  const handleCreate = async (data: { title: string; company: string; descriptionText: string; status: string }) => {
+  const handleCreate = async (data: { title: string; company: string; descriptionText: string; status: string; departmentId?: number | null }) => {
     setSaving(true);
     try {
       await enterpriseApi.jobs.create(data);
@@ -93,7 +114,7 @@ export default function JobDescriptions() {
     } finally { setSaving(false); }
   };
 
-  const handleEdit = async (data: { title: string; company: string; descriptionText: string; status: string }) => {
+  const handleEdit = async (data: { title: string; company: string; descriptionText: string; status: string; departmentId?: number | null }) => {
     if (!editing) return;
     setSaving(true);
     try {
@@ -119,13 +140,13 @@ export default function JobDescriptions() {
 
         <Dialog open={showCreate} onOpenChange={setShowCreate}>
           <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Create Job Description</DialogTitle></DialogHeader>
-            <JDForm onSave={handleCreate} onClose={() => setShowCreate(false)} loading={saving} />
+            <JDForm onSave={handleCreate} onClose={() => setShowCreate(false)} loading={saving} departments={departments} />
           </DialogContent>
         </Dialog>
 
         <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
           <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Edit Job Description</DialogTitle></DialogHeader>
-            {editing && <JDForm initial={editing} onSave={handleEdit} onClose={() => setEditing(null)} loading={saving} />}
+            {editing && <JDForm initial={editing} onSave={handleEdit} onClose={() => setEditing(null)} loading={saving} departments={departments} />}
           </DialogContent>
         </Dialog>
 

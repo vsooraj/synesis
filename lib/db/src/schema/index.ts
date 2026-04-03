@@ -1,5 +1,6 @@
 export * from "./analyses";
 export * from "./tenants";
+export * from "./departments";
 export * from "./users";
 export * from "./resumeProfiles";
 export * from "./jobDescriptions";

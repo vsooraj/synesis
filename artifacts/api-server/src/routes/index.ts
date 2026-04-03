@@ -13,6 +13,7 @@ import ragRouter from "./rag.js";
 import webhooksRouter from "./webhooks.js";
 import ticketsRouter from "./tickets.js";
 import interviewsRouter from "./interviews.js";
+import departmentsRouter from "./departments.js";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(ragRouter);
 router.use(webhooksRouter);
 router.use(ticketsRouter);
 router.use(interviewsRouter);
+router.use(departmentsRouter);
 
 export default router;

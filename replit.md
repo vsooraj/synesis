@@ -42,7 +42,8 @@ MatchPoint Enterprise — AI-powered talent intelligence platform.
 - `tenants` — multi-tenant organisations
 - `users` — users with roles (super_admin, hr_admin, hiring_manager, recruiter, employee)
 - `resume_profiles` — candidate resume storage with embeddings
-- `job_descriptions` — JD management with status (Draft/Active/Closed) and embeddings
+- `job_descriptions` — JD management with status (Draft/Active/Closed), embeddings, and optional `departmentId` FK
+- `departments` — org departments with name, description, headCount; used for department-wise tracking
 - `bulk_jobs` — async bulk analysis jobs
 - `bulk_job_results` — individual results per candidate per bulk job
 - `audit_log` — immutable append-only action log
@@ -74,6 +75,7 @@ MatchPoint Enterprise — AI-powered talent intelligence platform.
 - **Interview Scheduling**: `interview_slots` table with interviewers (JSON), scheduledAt, durationMinutes, type, status (Scheduled/Completed/Cancelled/No-Show), feedback, feedbackData (JSONB), rating; full REST API (CRUD, /complete, /cancel, /noshow, /upcoming, /request-feedback); `/interviews` page with day-grouped timeline, Scheduled/Completed/Cancelled/All/Upcoming filter pills; scheduling panel in ticket detail + "Schedule" button; fires `interview.scheduled` + `interview.feedback_requested` webhook events
 - **Structured Interview Feedback**: 6-dimension per-interview scoring (Technical Skills, Communication, Problem Solving, Culture Fit, Relevant Experience, Motivation), each with 1-5 stars + optional comment; computed average rating; dimension breakdown shown on completed interview cards; stored as JSON in feedbackData column
 - **Outlook & Teams Integration**: "Add to Calendar" button on every interview card generates RFC-5545 `.ics` file download (Outlook/Google Calendar/Apple Calendar compatible); "Request Feedback" button on Completed cards fires `interview.feedback_requested` webhook; 3 new n8n workflow templates — Teams Interview Notification (adaptive card on interview.scheduled), Outlook Calendar Invite (calendar event via MS Graph), Teams Feedback Request (DM each interviewer on feedback_requested); Integration Hub templates page split into "Shortlisting & Pipeline" and "Interview Scheduling" categories; template path bug fixed (now uses process.cwd() for reliable resolution); both interview events listed in webhook event registry
+- **Department Tracking**: `departments` table (id, tenantId, name, description, headCount); `departmentId` FK on `positionTickets` and `jobDescriptions` (nullable, set null on delete); CRUD API at `/enterprise/departments`; department breakdown analytics at `/enterprise/analytics/department-breakdown` (per-dept: openPositions, filledPositions, totalPositions, statusBreakdown, jobDescriptions, headCount); `/departments` page with card grid showing live stats + capacity utilisation bar; department filter dropdown on Position Board; department Select dropdowns in ticket-create, ticket-edit, JD-create, JD-edit forms; department breakdown section always visible on Analytics page
 
 ## Key Commands
 

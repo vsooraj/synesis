@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../context/auth";
-import { enterpriseApi } from "../lib/enterprise-api";
+import { enterpriseApi, type DepartmentBreakdown } from "../lib/enterprise-api";
 
 interface GapEntry { label: string; count: number; pct: number }
 interface Bucket { range: string; count: number }
@@ -33,6 +34,12 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"gaps" | "strengths" | "scores">("gaps");
+
+  const { data: deptBreakdown = [] } = useQuery<DepartmentBreakdown[]>({
+    queryKey: ["dept-breakdown"],
+    queryFn: () => enterpriseApi.departments.breakdown(),
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -92,7 +99,7 @@ export default function AnalyticsPage() {
 
       {analytics && analytics.totalAnalyses > 0 && (
         <>
-          <div className="flex gap-2 mb-6 border-b border-gray-200">
+          <div className="flex gap-2 mb-6 border-b border-gray-200 flex-wrap">
             {([["gaps", "Skills Gaps"], ["strengths", "Common Strengths"], ["scores", "Score Distribution"]] as const).map(([t, label]) => (
               <button
                 key={t}
@@ -201,6 +208,51 @@ export default function AnalyticsPage() {
             </div>
           )}
         </>
+      )}
+
+      {deptBreakdown.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Department Breakdown</h2>
+          <div className="space-y-4">
+            {deptBreakdown.map(dept => {
+              const maxPositions = Math.max(...deptBreakdown.map(d => d.totalPositions), 1);
+              const fillPct = dept.headCount > 0 ? Math.min(100, Math.round((dept.openPositions / dept.headCount) * 100)) : null;
+              return (
+                <div key={dept.id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <p className="font-semibold text-gray-800">{dept.name}</p>
+                      <p className="text-xs text-gray-400">{dept.headCount} approved headcount · {dept.jobDescriptions} JDs</p>
+                    </div>
+                    <div className="flex gap-4 text-center text-sm">
+                      <div><p className="font-bold text-blue-600">{dept.openPositions}</p><p className="text-xs text-gray-400">Open</p></div>
+                      <div><p className="font-bold text-green-600">{dept.filledPositions}</p><p className="text-xs text-gray-400">Filled</p></div>
+                      <div><p className="font-bold text-gray-700">{dept.totalPositions}</p><p className="text-xs text-gray-400">Total</p></div>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(dept.totalPositions / maxPositions) * 100}%` }} />
+                  </div>
+                  {Object.keys(dept.statusBreakdown).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(dept.statusBreakdown).map(([status, count]) => (
+                        <span key={status} className="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{status}: {count}</span>
+                      ))}
+                    </div>
+                  )}
+                  {fillPct !== null && (
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${fillPct > 80 ? "bg-red-400" : fillPct > 50 ? "bg-amber-400" : "bg-green-400"}`} style={{ width: `${fillPct}%` }} />
+                      </div>
+                      <span>{fillPct}% of headcount in active hiring</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

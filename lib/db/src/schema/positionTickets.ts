@@ -1,6 +1,7 @@
 import { pgTable, text, serial, timestamp, integer, date } from "drizzle-orm/pg-core";
 import { tenantsTable } from "./tenants";
 import { jobDescriptionsTable } from "./jobDescriptions";
+import { departmentsTable } from "./departments";
 
 export const TICKET_STATUSES = ["Draft", "Open", "Sourcing", "Screening", "Interviewing", "Offer", "Closed"] as const;
 export const TICKET_PRIORITIES = ["Critical", "High", "Medium", "Low"] as const;
@@ -18,6 +19,7 @@ export const positionTicketsTable = pgTable("position_tickets", {
   priority: text("priority").notNull().default("Medium"),
   assignedTo: text("assigned_to").notNull().default("[]"),
   hiringManagerId: integer("hiring_manager_id"),
+  departmentId: integer("department_id").references(() => departmentsTable.id, { onDelete: "set null" }),
   department: text("department"),
   location: text("location"),
   salaryRange: text("salary_range"),

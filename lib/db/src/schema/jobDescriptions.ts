@@ -3,6 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { tenantsTable } from "./tenants";
 import { usersTable } from "./users";
+import { departmentsTable } from "./departments";
 
 export type JDStatus = "Draft" | "Active" | "Closed";
 
@@ -13,6 +14,7 @@ export const jobDescriptionsTable = pgTable("job_descriptions", {
   title: text("title").notNull(),
   company: text("company"),
   descriptionText: text("description_text").notNull(),
+  departmentId: integer("department_id").references(() => departmentsTable.id, { onDelete: "set null" }),
   status: text("status").notNull().default("Draft").$type<JDStatus>(),
   embedding: text("embedding"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

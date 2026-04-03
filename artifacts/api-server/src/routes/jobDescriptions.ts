@@ -20,7 +20,7 @@ async function generateEmbedding(text: string): Promise<string> {
 }
 
 router.post("/enterprise/jobs", requireAuth, requireRole("super_admin", "hr_admin", "hiring_manager"), async (req: AuthRequest, res): Promise<void> => {
-  const { title, company, descriptionText, status } = req.body;
+  const { title, company, descriptionText, status, departmentId } = req.body;
   if (!title || !descriptionText) {
     res.status(400).json({ error: "title and descriptionText are required" });
     return;
@@ -34,6 +34,7 @@ router.post("/enterprise/jobs", requireAuth, requireRole("super_admin", "hr_admi
     title,
     company: company || null,
     descriptionText,
+    departmentId: departmentId ? Number(departmentId) : null,
     status: status || "Draft",
     embedding: embedding || null,
   }).returning();
@@ -48,6 +49,7 @@ router.get("/enterprise/jobs", requireAuth, async (req: AuthRequest, res): Promi
     title: jobDescriptionsTable.title,
     company: jobDescriptionsTable.company,
     status: jobDescriptionsTable.status,
+    departmentId: jobDescriptionsTable.departmentId,
     createdBy: jobDescriptionsTable.createdBy,
     createdAt: jobDescriptionsTable.createdAt,
   }).from(jobDescriptionsTable)
@@ -69,8 +71,7 @@ router.get("/enterprise/jobs/:id", requireAuth, async (req: AuthRequest, res): P
 
 router.put("/enterprise/jobs/:id", requireAuth, requireRole("super_admin", "hr_admin", "hiring_manager"), async (req: AuthRequest, res): Promise<void> => {
   const id = parseInt(req.params.id);
-  const { title, company, descriptionText, status } = req.body;
-
+  const { title, company, descriptionText, status, departmentId } = req.body;
   const updates: Partial<typeof jobDescriptionsTable.$inferInsert> = { updatedAt: new Date() };
   if (title) updates.title = title;
   if (company !== undefined) updates.company = company;
@@ -79,6 +80,7 @@ router.put("/enterprise/jobs/:id", requireAuth, requireRole("super_admin", "hr_a
     updates.embedding = await generateEmbedding(descriptionText) || null;
   }
   if (status) updates.status = status;
+  if (departmentId !== undefined) updates.departmentId = departmentId ? Number(departmentId) : null;
 
   const [updated] = await db.update(jobDescriptionsTable)
     .set(updates)

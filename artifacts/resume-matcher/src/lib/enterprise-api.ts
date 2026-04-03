@@ -41,11 +41,35 @@ export interface ResumeProfile {
   createdAt: string;
 }
 
+export interface Department {
+  id: number;
+  tenantId: number;
+  name: string;
+  description: string | null;
+  headCount: number;
+  createdAt: string;
+  updatedAt: string;
+  openPositions?: number;
+  jobDescriptions?: number;
+}
+
+export interface DepartmentBreakdown {
+  id: number;
+  name: string;
+  headCount: number;
+  totalPositions: number;
+  openPositions: number;
+  filledPositions: number;
+  jobDescriptions: number;
+  statusBreakdown: Record<string, number>;
+}
+
 export interface JobDescription {
   id: number;
   title: string;
   company: string | null;
   status: string;
+  departmentId: number | null;
   createdBy: number | null;
   createdAt: string;
   descriptionText?: string;
@@ -212,9 +236,9 @@ export const enterpriseApi = {
   jobs: {
     list: () => req<JobDescription[]>("GET", "/enterprise/jobs"),
     get: (id: number) => req<JobDescription>("GET", `/enterprise/jobs/${id}`),
-    create: (data: { title: string; company?: string; descriptionText: string; status?: string }) =>
+    create: (data: { title: string; company?: string; descriptionText: string; status?: string; departmentId?: number | null }) =>
       req<JobDescription>("POST", "/enterprise/jobs", data),
-    update: (id: number, data: Partial<{ title: string; company: string; descriptionText: string; status: string }>) =>
+    update: (id: number, data: Partial<{ title: string; company: string; descriptionText: string; status: string; departmentId: number | null }>) =>
       req<JobDescription>("PUT", `/enterprise/jobs/${id}`, data),
     delete: (id: number) => req<void>("DELETE", `/enterprise/jobs/${id}`),
   },
@@ -270,14 +294,24 @@ export const enterpriseApi = {
     requestFeedback: (id: number) => req<{ success: boolean; message: string }>("POST", `/enterprise/interviews/${id}/request-feedback`, {}),
     delete: (id: number) => req<void>("DELETE", `/enterprise/interviews/${id}`),
   },
+  departments: {
+    list: () => req<Department[]>("GET", "/enterprise/departments"),
+    create: (data: { name: string; description?: string; headCount?: number }) =>
+      req<Department>("POST", "/enterprise/departments", data),
+    update: (id: number, data: { name?: string; description?: string; headCount?: number }) =>
+      req<Department>("PUT", `/enterprise/departments/${id}`, data),
+    delete: (id: number) => req<void>("DELETE", `/enterprise/departments/${id}`),
+    breakdown: () => req<DepartmentBreakdown[]>("GET", "/enterprise/analytics/department-breakdown"),
+  },
   tickets: {
-    list: (params?: { status?: string; priority?: string }) => {
+    list: (params?: { status?: string; priority?: string; departmentId?: number }) => {
       const qs = new URLSearchParams();
       if (params?.status) qs.set("status", params.status);
       if (params?.priority) qs.set("priority", params.priority);
+      if (params?.departmentId) qs.set("departmentId", String(params.departmentId));
       return req<Ticket[]>("GET", `/enterprise/tickets?${qs}`);
     },
-    create: (data: { title: string; priority?: string; department?: string; location?: string; openings?: number; description?: string; jobDescriptionId?: number; targetStartDate?: string }) =>
+    create: (data: { title: string; priority?: string; department?: string; departmentId?: number; location?: string; openings?: number; description?: string; jobDescriptionId?: number; targetStartDate?: string }) =>
       req<Ticket>("POST", "/enterprise/tickets", data),
     get: (id: number) => req<TicketDetail>("GET", `/enterprise/tickets/${id}`),
     update: (id: number, data: Record<string, unknown>) => req<Ticket>("PATCH", `/enterprise/tickets/${id}`, data),
@@ -328,6 +362,7 @@ export interface Ticket {
   priority: string;
   assignedTo: string;
   hiringManagerId: number | null;
+  departmentId: number | null;
   department: string | null;
   location: string | null;
   salaryRange: string | null;

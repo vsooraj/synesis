@@ -31,7 +31,7 @@ async function recordHistory(ticketId: number, userId: number, authorName: strin
 
 router.get("/enterprise/tickets", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   try {
-    const { status, priority } = req.query as { status?: string; priority?: string };
+    const { status, priority, departmentId } = req.query as { status?: string; priority?: string; departmentId?: string };
     const tickets = await db.select().from(positionTicketsTable)
       .where(eq(positionTicketsTable.tenantId, req.user!.tenantId))
       .orderBy(desc(positionTicketsTable.updatedAt));
@@ -39,6 +39,7 @@ router.get("/enterprise/tickets", requireAuth, async (req: AuthRequest, res): Pr
     let filtered = tickets;
     if (status) filtered = filtered.filter(t => t.status === status);
     if (priority) filtered = filtered.filter(t => t.priority === priority);
+    if (departmentId) filtered = filtered.filter(t => t.departmentId === parseInt(departmentId));
 
     const enriched = filtered.map(t => ({ ...t, sla: calcSla(t) }));
     res.json(enriched);
@@ -49,8 +50,8 @@ router.get("/enterprise/tickets", requireAuth, async (req: AuthRequest, res): Pr
 
 router.post("/enterprise/tickets", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   try {
-    const { title, jobDescriptionId, priority, status, department, location, salaryRange, openings, targetStartDate, description, tags } = req.body as {
-      title: string; jobDescriptionId?: number; priority?: string; status?: string; department?: string; location?: string;
+    const { title, jobDescriptionId, priority, status, department, departmentId, location, salaryRange, openings, targetStartDate, description, tags } = req.body as {
+      title: string; jobDescriptionId?: number; priority?: string; status?: string; department?: string; departmentId?: number; location?: string;
       salaryRange?: string; openings?: number; targetStartDate?: string; description?: string; tags?: string[];
     };
 
@@ -66,6 +67,7 @@ router.post("/enterprise/tickets", requireAuth, async (req: AuthRequest, res): P
       status: status ?? "Draft",
       priority: priority ?? "Medium",
       assignedTo: "[]",
+      departmentId: departmentId ?? null,
       department: department ?? null,
       location: location ?? null,
       salaryRange: salaryRange ?? null,
@@ -134,6 +136,11 @@ router.patch("/enterprise/tickets/:id", requireAuth, async (req: AuthRequest, re
     const fields = ["title", "priority", "department", "location", "salaryRange", "openings", "targetStartDate", "description", "jobDescriptionId"] as const;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     const authorName = req.user!.email;
+
+    if (req.body.departmentId !== undefined) {
+      const deptId = req.body.departmentId === "" || req.body.departmentId === null ? null : Number(req.body.departmentId);
+      updates.departmentId = deptId;
+    }
 
     for (const field of fields) {
       if (req.body[field] === undefined) continue;

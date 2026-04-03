@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { enterpriseApi, type Ticket, TICKET_STATUSES, TICKET_PRIORITIES, PRIORITY_COLORS, SLA_BADGE } from "@/lib/enterprise-api";
+import { enterpriseApi, type Ticket, type Department, TICKET_STATUSES, TICKET_PRIORITIES, PRIORITY_COLORS, SLA_BADGE } from "@/lib/enterprise-api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Ticket as TicketIcon, AlertTriangle, Clock, Users, Loader2, BarChart2 } from "lucide-react";
+import { Plus, Ticket as TicketIcon, AlertTriangle, Clock, Users, Loader2, BarChart2, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const COLUMN_COLORS: Record<string, string> = {
@@ -76,13 +76,21 @@ function TicketCard({ ticket, onDragStart }: { ticket: Ticket; onDragStart: (e: 
   );
 }
 
-function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+function CreateTicketDialog({ open, onOpenChange, departments }: { open: boolean; onOpenChange: (v: boolean) => void; departments: Department[] }) {
   const qc = useQueryClient();
-  const [form, setForm] = React.useState({ title: "", priority: "Medium", department: "", location: "", openings: "1", description: "" });
+  const EMPTY = { title: "", priority: "Medium", departmentId: "", location: "", openings: "1", description: "" };
+  const [form, setForm] = React.useState(EMPTY);
 
   const create = useMutation({
-    mutationFn: () => enterpriseApi.tickets.create({ ...form, openings: parseInt(form.openings) || 1 }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tickets"] }); onOpenChange(false); setForm({ title: "", priority: "Medium", department: "", location: "", openings: "1", description: "" }); },
+    mutationFn: () => enterpriseApi.tickets.create({
+      title: form.title,
+      priority: form.priority,
+      departmentId: form.departmentId ? parseInt(form.departmentId) : undefined,
+      location: form.location || undefined,
+      openings: parseInt(form.openings) || 1,
+      description: form.description || undefined,
+    }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tickets"] }); onOpenChange(false); setForm(EMPTY); },
   });
 
   return (
@@ -110,7 +118,13 @@ function CreateTicketDialog({ open, onOpenChange }: { open: boolean; onOpenChang
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Department</Label>
-              <Input value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} placeholder="Engineering" />
+              <Select value={form.departmentId} onValueChange={v => setForm(f => ({ ...f, departmentId: v }))}>
+                <SelectTrigger><SelectValue placeholder="Select dept…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {departments.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Location</Label>
@@ -138,10 +152,16 @@ export default function TicketsPage() {
   const [showCreate, setShowCreate] = React.useState(false);
   const [dragging, setDragging] = React.useState<number | null>(null);
   const [dragOver, setDragOver] = React.useState<string | null>(null);
+  const [filterDeptId, setFilterDeptId] = React.useState<number | undefined>(undefined);
+
+  const { data: departments = [] } = useQuery<Department[]>({
+    queryKey: ["departments"],
+    queryFn: () => enterpriseApi.departments.list(),
+  });
 
   const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
-    queryKey: ["tickets"],
-    queryFn: () => enterpriseApi.tickets.list(),
+    queryKey: ["tickets", filterDeptId],
+    queryFn: () => enterpriseApi.tickets.list(filterDeptId ? { departmentId: filterDeptId } : undefined),
   });
 
   const moveStatus = useMutation({
@@ -178,13 +198,25 @@ export default function TicketsPage() {
 
   return (
     <div className="h-full flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <TicketIcon className="w-5 h-5 text-blue-600" />
           <h1 className="text-xl font-bold text-gray-900">Position Board</h1>
           <Badge variant="outline" className="text-gray-500">{tickets.length} total</Badge>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {departments.length > 0 && (
+            <Select value={filterDeptId ? String(filterDeptId) : ""} onValueChange={v => setFilterDeptId(v ? parseInt(v) : undefined)}>
+              <SelectTrigger className="h-8 text-sm w-44 gap-1">
+                <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+                <SelectValue placeholder="All departments" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All departments</SelectItem>
+                {departments.map(d => <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
           <Link href="/tickets/workload">
             <Button variant="outline" size="sm" className="gap-1">
               <BarChart2 className="w-4 h-4" /> Workload
@@ -225,7 +257,7 @@ export default function TicketsPage() {
         })}
       </div>
 
-      <CreateTicketDialog open={showCreate} onOpenChange={setShowCreate} />
+      <CreateTicketDialog open={showCreate} onOpenChange={setShowCreate} departments={departments} />
     </div>
   );
 }
