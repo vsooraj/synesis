@@ -24,3 +24,9 @@ id = "Xfv9mRxOlHRDt93J6YftD"
 uri = "file://docs/MatchPoint-Enterprise-User-Manual.md"
 type = "text"
 title = "MatchPoint Enterprise — User Manual"
+
+[[outputs]]
+id = "0-TEb7GtUaduN6Q7OXrNS"
+uri = "file://docs/MatchPoint-Enterprise-TechStack-Deployment.md"
+type = "text"
+title = "MatchPoint Enterprise — Technology Stack & Deployment Guide"
