@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { format } from "date-fns";
 import {
   ArrowLeft,
@@ -43,7 +43,7 @@ export default function Results() {
   const numId = Number(id);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [location, setLocation] = useParams();
+  const [, setLocation] = useLocation();
 
   const { data: analysis, isLoading, isError } = useGetAnalysis(numId, {
     query: {
