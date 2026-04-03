@@ -30,3 +30,9 @@ id = "0-TEb7GtUaduN6Q7OXrNS"
 uri = "file://docs/MatchPoint-Enterprise-TechStack-Deployment.md"
 type = "text"
 title = "MatchPoint Enterprise — Technology Stack & Deployment Guide"
+
+[[outputs]]
+id = "jqSlHIZA_Qo4ewqdGM0TC"
+uri = "file://docs/MatchPoint-Enterprise-Azure-Deployment.md"
+type = "text"
+title = "MatchPoint Enterprise — Azure Deployment Guide"
