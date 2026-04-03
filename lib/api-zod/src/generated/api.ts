@@ -14,3 +14,125 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Uses AI to match resume against a job description and provide feedback
+ * @summary Analyze resume against job description
+ */
+export const AnalyzeResumeBody = zod.object({
+  resumeText: zod.string().describe("The full text content of the resume"),
+  jobDescription: zod.string().describe("The full text of the job description"),
+  jobTitle: zod.string().nullish().describe("Optional job title for labeling"),
+  companyName: zod
+    .string()
+    .nullish()
+    .describe("Optional company name for labeling"),
+});
+
+export const AnalyzeResumeResponse = zod.object({
+  id: zod.number(),
+  jobTitle: zod.string().nullish(),
+  companyName: zod.string().nullish(),
+  resumeText: zod.string(),
+  jobDescription: zod.string(),
+  overallScore: zod.number().describe("Match score 0-100"),
+  summary: zod.string().describe("Brief summary of the match"),
+  strengths: zod
+    .array(zod.string())
+    .describe("Key strengths in the resume for this role"),
+  gaps: zod.array(zod.string()).describe("Missing skills or experience"),
+  matchedKeywords: zod.array(
+    zod.object({
+      keyword: zod.string(),
+      found: zod.boolean(),
+      importance: zod.enum(["high", "medium", "low"]),
+    }),
+  ),
+  missingKeywords: zod.array(zod.string()),
+  suggestions: zod.array(zod.string()).describe("Actionable improvements"),
+  sectionScores: zod.object({
+    skills: zod.number(),
+    experience: zod.number(),
+    education: zod.number(),
+    keywords: zod.number(),
+  }),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * Returns a list of past resume analyses
+ * @summary List past analyses
+ */
+export const ListAnalysesResponseItem = zod.object({
+  id: zod.number(),
+  jobTitle: zod.string().nullish(),
+  companyName: zod.string().nullish(),
+  overallScore: zod.number(),
+  summary: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListAnalysesResponse = zod.array(ListAnalysesResponseItem);
+
+/**
+ * @summary Get a specific analysis by ID
+ */
+export const GetAnalysisParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetAnalysisResponse = zod.object({
+  id: zod.number(),
+  jobTitle: zod.string().nullish(),
+  companyName: zod.string().nullish(),
+  resumeText: zod.string(),
+  jobDescription: zod.string(),
+  overallScore: zod.number().describe("Match score 0-100"),
+  summary: zod.string().describe("Brief summary of the match"),
+  strengths: zod
+    .array(zod.string())
+    .describe("Key strengths in the resume for this role"),
+  gaps: zod.array(zod.string()).describe("Missing skills or experience"),
+  matchedKeywords: zod.array(
+    zod.object({
+      keyword: zod.string(),
+      found: zod.boolean(),
+      importance: zod.enum(["high", "medium", "low"]),
+    }),
+  ),
+  missingKeywords: zod.array(zod.string()),
+  suggestions: zod.array(zod.string()).describe("Actionable improvements"),
+  sectionScores: zod.object({
+    skills: zod.number(),
+    experience: zod.number(),
+    education: zod.number(),
+    keywords: zod.number(),
+  }),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete an analysis
+ */
+export const DeleteAnalysisParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Get aggregate statistics across all analyses
+ */
+export const GetResumeStatsResponse = zod.object({
+  totalAnalyses: zod.number(),
+  averageScore: zod.number(),
+  highestScore: zod.number(),
+  lowestScore: zod.number(),
+  recentAnalyses: zod.array(
+    zod.object({
+      id: zod.number(),
+      jobTitle: zod.string().nullish(),
+      companyName: zod.string().nullish(),
+      overallScore: zod.number(),
+      summary: zod.string(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});

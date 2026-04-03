@@ -8,3 +8,89 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface AnalyzeResumeBody {
+  /** The full text content of the resume */
+  resumeText: string;
+  /** The full text of the job description */
+  jobDescription: string;
+  /**
+   * Optional job title for labeling
+   * @nullable
+   */
+  jobTitle?: string | null;
+  /**
+   * Optional company name for labeling
+   * @nullable
+   */
+  companyName?: string | null;
+}
+
+export type KeywordMatchImportance =
+  (typeof KeywordMatchImportance)[keyof typeof KeywordMatchImportance];
+
+export const KeywordMatchImportance = {
+  high: "high",
+  medium: "medium",
+  low: "low",
+} as const;
+
+export interface KeywordMatch {
+  keyword: string;
+  found: boolean;
+  importance: KeywordMatchImportance;
+}
+
+export interface SectionScores {
+  skills: number;
+  experience: number;
+  education: number;
+  keywords: number;
+}
+
+export interface AnalysisResult {
+  id: number;
+  /** @nullable */
+  jobTitle?: string | null;
+  /** @nullable */
+  companyName?: string | null;
+  resumeText: string;
+  jobDescription: string;
+  /** Match score 0-100 */
+  overallScore: number;
+  /** Brief summary of the match */
+  summary: string;
+  /** Key strengths in the resume for this role */
+  strengths: string[];
+  /** Missing skills or experience */
+  gaps: string[];
+  matchedKeywords: KeywordMatch[];
+  missingKeywords: string[];
+  /** Actionable improvements */
+  suggestions: string[];
+  sectionScores: SectionScores;
+  createdAt: string;
+}
+
+export interface AnalysisSummary {
+  id: number;
+  /** @nullable */
+  jobTitle?: string | null;
+  /** @nullable */
+  companyName?: string | null;
+  overallScore: number;
+  summary: string;
+  createdAt: string;
+}
+
+export interface ResumeStats {
+  totalAnalyses: number;
+  averageScore: number;
+  highestScore: number;
+  lowestScore: number;
+  recentAnalyses: AnalysisSummary[];
+}
+
+export interface ErrorResponse {
+  error: string;
+}

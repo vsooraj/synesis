@@ -6,4 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./analysisResult";
+export * from "./analysisSummary";
+export * from "./analyzeResumeBody";
+export * from "./errorResponse";
 export * from "./healthStatus";
+export * from "./keywordMatch";
+export * from "./keywordMatchImportance";
+export * from "./resumeStats";
+export * from "./sectionScores";

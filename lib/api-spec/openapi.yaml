@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: resume
+    description: Resume and JD matching operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,101 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /resume/analyze:
+    post:
+      operationId: analyzeResume
+      tags: [resume]
+      summary: Analyze resume against job description
+      description: Uses AI to match resume against a job description and provide feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeResumeBody"
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /resume/analyses:
+    get:
+      operationId: listAnalyses
+      tags: [resume]
+      summary: List past analyses
+      description: Returns a list of past resume analyses
+      responses:
+        "200":
+          description: List of analyses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnalysisSummary"
+  /resume/analyses/{id}:
+    get:
+      operationId: getAnalysis
+      tags: [resume]
+      summary: Get a specific analysis by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Full analysis detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisResult"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteAnalysis
+      tags: [resume]
+      summary: Delete an analysis
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /resume/stats:
+    get:
+      operationId: getResumeStats
+      tags: [resume]
+      summary: Get aggregate statistics across all analyses
+      responses:
+        "200":
+          description: Statistics summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResumeStats"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +130,160 @@ components:
           type: string
       required:
         - status
-
+    AnalyzeResumeBody:
+      type: object
+      properties:
+        resumeText:
+          type: string
+          description: The full text content of the resume
+        jobDescription:
+          type: string
+          description: The full text of the job description
+        jobTitle:
+          type: ["string", "null"]
+          description: Optional job title for labeling
+        companyName:
+          type: ["string", "null"]
+          description: Optional company name for labeling
+      required:
+        - resumeText
+        - jobDescription
+    AnalysisResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        jobTitle:
+          type: ["string", "null"]
+        companyName:
+          type: ["string", "null"]
+        resumeText:
+          type: string
+        jobDescription:
+          type: string
+        overallScore:
+          type: number
+          description: Match score 0-100
+        summary:
+          type: string
+          description: Brief summary of the match
+        strengths:
+          type: array
+          items:
+            type: string
+          description: Key strengths in the resume for this role
+        gaps:
+          type: array
+          items:
+            type: string
+          description: Missing skills or experience
+        matchedKeywords:
+          type: array
+          items:
+            $ref: "#/components/schemas/KeywordMatch"
+        missingKeywords:
+          type: array
+          items:
+            type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+          description: Actionable improvements
+        sectionScores:
+          $ref: "#/components/schemas/SectionScores"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - resumeText
+        - jobDescription
+        - overallScore
+        - summary
+        - strengths
+        - gaps
+        - matchedKeywords
+        - missingKeywords
+        - suggestions
+        - sectionScores
+        - createdAt
+    AnalysisSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        jobTitle:
+          type: ["string", "null"]
+        companyName:
+          type: ["string", "null"]
+        overallScore:
+          type: number
+        summary:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - overallScore
+        - summary
+        - createdAt
+    KeywordMatch:
+      type: object
+      properties:
+        keyword:
+          type: string
+        found:
+          type: boolean
+        importance:
+          type: string
+          enum: [high, medium, low]
+      required:
+        - keyword
+        - found
+        - importance
+    SectionScores:
+      type: object
+      properties:
+        skills:
+          type: number
+        experience:
+          type: number
+        education:
+          type: number
+        keywords:
+          type: number
+      required:
+        - skills
+        - experience
+        - education
+        - keywords
+    ResumeStats:
+      type: object
+      properties:
+        totalAnalyses:
+          type: integer
+        averageScore:
+          type: number
+        highestScore:
+          type: number
+        lowestScore:
+          type: number
+        recentAnalyses:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalysisSummary"
+      required:
+        - totalAnalyses
+        - averageScore
+        - highestScore
+        - lowestScore
+        - recentAnalyses
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
