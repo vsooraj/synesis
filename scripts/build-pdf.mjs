@@ -164,13 +164,14 @@ const PAGES = [
     badge: "ENTERPRISE",
     badgeColor: C.primary,
     description:
-      "Create and manage the library of job descriptions used across all analyses. Three lifecycle states: Draft, Active, and Closed.",
+      "Create and manage the library of job descriptions used across all analyses. Three lifecycle states: Draft, Active, and Closed. Assign each JD to a department for organised tracking.",
     features: [
       "Full CRUD — create, edit, delete job descriptions",
       "Draft status — JD being written, not yet available for analysis",
       "Active status — available for bulk analysis and shortlisting",
       "Closed status — archived; no longer selectable for new analyses",
       "Filter the list by status using the tab pills",
+      "Assign JDs to a department for cross-department visibility",
       "JDs are automatically embedded for semantic similarity (text-embedding-3-small)",
       "Linked to bulk jobs, shortlists, and position tickets",
     ],
@@ -224,15 +225,15 @@ const PAGES = [
     badge: "ENTERPRISE",
     badgeColor: C.primary,
     description:
-      "Aggregate analytics across all analyses in your tenant. Visualise the most common skill gaps, top strengths, and score distributions to inform hiring strategy.",
+      "Aggregate analytics across all analyses in your tenant. Visualise the most common skill gaps, top strengths, score distributions, and a live department breakdown to inform hiring strategy.",
     features: [
       "Top Skills Gaps — horizontal bar chart ranked by frequency",
       "Top Strengths — bar chart of the most common strong points",
       "Score Distribution — histogram across 5 score bands",
       "Section Score Radar — average per section (Experience, Skills, Education, Certifications)",
       "Filter all charts to a single Job Description",
+      "Department Breakdown — per-department open/filled/total positions, capacity bar, and pipeline status badges",
       "Data updates live as new analyses are completed",
-      "Useful for identifying hiring strategy gaps at the organisational level",
     ],
   },
   {
@@ -284,15 +285,16 @@ const PAGES = [
     badge: "ENTERPRISE",
     badgeColor: C.primary,
     description:
-      "7-column Kanban board for tracking every open role through the hiring pipeline. Drag and drop cards between columns to update status. SLA timers per priority level.",
+      "7-column Kanban board for tracking every open role through the hiring pipeline. Drag and drop cards between columns to update status. Filter by department. SLA timers per priority level.",
     features: [
       "7 columns: Draft → Open → Sourcing → Screening → Interviewing → Offer → Closed",
       "Drag-and-drop status transitions with instant save",
+      "Filter by department to focus on a single team's open positions",
+      "Assign each ticket to a department in the create / edit dialog",
       "Priority levels: Critical (14d SLA), High (30d), Medium (60d), Low (90d)",
       "SLA warning (yellow) and breach (red) badges visible on every card",
       "Ticket detail: metadata, candidate pipeline, interviews, activity feed, comments",
       "Recruiter Workload view: bar chart of ticket count per recruiter + SLA breach counts",
-      "Webhooks fire on position.opened and position.closed events",
     ],
   },
   {
@@ -395,6 +397,28 @@ const PAGES = [
       "employee: upload own resume and view own analyses only",
     ],
   },
+  {
+    num:  "19",
+    title: "Departments",
+    route: "/departments",
+    screenshot: "19-departments.jpg",
+    color: C.teal,
+    badge: "ENTERPRISE",
+    badgeColor: C.primary,
+    description:
+      "Create and manage your organisation's departments. Each department card shows live hiring stats, approved headcount, capacity utilisation, and a pipeline status breakdown — giving leadership instant visibility across teams.",
+    features: [
+      "Card-grid view — one card per department with live stats",
+      "Per-card stats: open positions, JD count, approved headcount",
+      "Capacity utilisation bar — shows what percentage of approved seats are filled",
+      "Pipeline status badges — Draft, Open, Sourcing, Screening, Interviewing, Offer, Closed counts",
+      "Add Department — set name, description, and approved headcount",
+      "Edit and delete departments with full confirmation dialogs",
+      "Department filter on the Position Board — scope the Kanban to one team",
+      "Department selector on JD create/edit forms for cross-linking",
+      "Analytics page shows a department breakdown section with per-dept pipeline data",
+    ],
+  },
 ];
 
 // ── PDF Builder ───────────────────────────────────────────────────────────────
@@ -485,8 +509,8 @@ for (const m of metaItems) {
 const statsY = PH * 0.62;
 rect(40, statsY, PW - 80, 110, "rgba(255,255,255,0.08)", 12);
 const stats = [
-  ["18", "Feature Modules"],
-  ["18", "Real Screenshots"],
+  ["19", "Feature Modules"],
+  ["19", "Real Screenshots"],
   ["9",  "Webhook Events"],
   ["6",  "Feedback Dimensions"],
 ];
