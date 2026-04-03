@@ -18,3 +18,9 @@ id = "a-InN7AI2sIWWu5Q3akcM"
 uri = "file://docs/PRD.md"
 type = "text"
 title = "MatchPoint Enterprise — PRD v2.0"
+
+[[outputs]]
+id = "Xfv9mRxOlHRDt93J6YftD"
+uri = "file://docs/MatchPoint-Enterprise-User-Manual.md"
+type = "text"
+title = "MatchPoint Enterprise — User Manual"
