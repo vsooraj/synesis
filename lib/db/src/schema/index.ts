@@ -13,3 +13,4 @@ export * from "./positionTickets";
 export * from "./ticketComments";
 export * from "./ticketCandidates";
 export * from "./ticketHistory";
+export * from "./interviewSlots";

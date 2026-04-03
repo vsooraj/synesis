@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { enterpriseApi, type TicketDetail, TICKET_STATUSES, TICKET_PRIORITIES, CANDIDATE_STAGES, PRIORITY_COLORS, SLA_BADGE } from "@/lib/enterprise-api";
+import { enterpriseApi, type TicketDetail, type InterviewSlot, TICKET_STATUSES, TICKET_PRIORITIES, CANDIDATE_STAGES, PRIORITY_COLORS, SLA_BADGE } from "@/lib/enterprise-api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { ScheduleInterviewDialog } from "@/pages/interviews";
 import {
   ArrowLeft, Clock, AlertTriangle, User, MapPin, Building2, Calendar, Briefcase,
-  MessageSquare, History, Plus, Loader2, ChevronRight, X, ExternalLink, Users
+  MessageSquare, History, Plus, Loader2, ChevronRight, X, ExternalLink, Users,
+  CalendarDays, Video, Phone, CheckCircle2, XCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const INTERVIEW_TYPE_ICON: Record<string, React.ReactNode> = {
+  Phone: <Phone className="w-3 h-3" />,
+  Video: <Video className="w-3 h-3" />,
+  Technical: <span className="text-xs font-bold font-mono">{`</>`}</span>,
+  Onsite: <Building2 className="w-3 h-3" />,
+  Panel: <Users className="w-3 h-3" />,
+};
+
+const INTERVIEW_STATUS_CLS: Record<string, string> = {
+  Scheduled: "bg-blue-100 text-blue-700",
+  Completed: "bg-green-100 text-green-700",
+  Cancelled: "bg-gray-100 text-gray-400",
+  "No-show": "bg-red-100 text-red-600",
+};
 
 function SlaBadge({ sla }: { sla: TicketDetail["ticket"]["sla"] }) {
   if (!sla) return null;
@@ -117,6 +134,19 @@ export default function TicketDetailPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ticket", ticketId] }),
   });
 
+  const [scheduleForCandidate, setScheduleForCandidate] = React.useState<{ tcId: number; rpId: number | null; name: string } | null>(null);
+
+  const { data: interviews = [] } = useQuery<InterviewSlot[]>({
+    queryKey: ["interviews", "ticket", ticketId],
+    queryFn: () => enterpriseApi.interviews.list({ ticketId }),
+    enabled: !!ticketId,
+  });
+
+  const cancelInterviewMutation = useMutation({
+    mutationFn: (id: number) => enterpriseApi.interviews.cancel(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["interviews", "ticket", ticketId] }),
+  });
+
   if (isLoading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-blue-500" /></div>;
   if (error || !data) return <div className="p-8 text-red-500">Failed to load ticket</div>;
 
@@ -199,14 +229,68 @@ export default function TicketDetailPage() {
                     <p className="text-xs text-gray-400 truncate">{tc.candidate?.candidateEmail ?? tc.candidate?.fileName ?? ""}</p>
                   </div>
                   <Select value={tc.stage} onValueChange={(stage) => updateCandStageMutation.mutate({ tcId: tc.id, stage })}>
-                    <SelectTrigger className="w-32 h-7 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-28 h-7 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>{CANDIDATE_STAGES.map(s => <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>)}</SelectContent>
                   </Select>
+                  <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-blue-500 border-blue-200 hover:bg-blue-50"
+                    title="Schedule Interview"
+                    onClick={() => setScheduleForCandidate({ tcId: tc.id, rpId: tc.candidate?.id ?? null, name: tc.candidate?.candidateName ?? "Candidate" })}>
+                    <CalendarDays className="w-3.5 h-3.5" />
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-red-500" onClick={() => removeCandMutation.mutate(tc.id)}>
                     <X className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-800 flex items-center gap-1.5">
+                <CalendarDays className="w-4 h-4 text-blue-500" /> Interviews
+                {interviews.length > 0 && <Badge variant="outline" className="text-xs">{interviews.length}</Badge>}
+              </h2>
+              <Button size="sm" variant="outline" className="gap-1 h-7 text-xs"
+                onClick={() => setScheduleForCandidate({ tcId: 0, rpId: null, name: "" })}>
+                <Plus className="w-3 h-3" /> Schedule
+              </Button>
+            </div>
+            <div className="p-4 space-y-2">
+              {interviews.length === 0 && <p className="text-sm text-gray-400 text-center py-4">No interviews scheduled</p>}
+              {interviews.map(iv => {
+                const d = new Date(iv.scheduledAt);
+                const isToday = d.toDateString() === new Date().toDateString();
+                return (
+                  <div key={iv.id} className={cn("flex items-center gap-3 py-2 border-b border-gray-50 last:border-0",
+                    iv.status === "Cancelled" && "opacity-50")}>
+                    <div className="flex-1 min-w-0 space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-medium text-gray-900 truncate">{iv.candidate?.candidateName ?? "—"}</span>
+                        <span className={cn("inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded font-medium", INTERVIEW_STATUS_CLS[iv.status])}>
+                          {iv.status}
+                        </span>
+                      </div>
+                      <p className={cn("text-xs flex items-center gap-1", isToday ? "text-blue-600 font-medium" : "text-gray-400")}>
+                        {INTERVIEW_TYPE_ICON[iv.type]}
+                        {iv.type} · {isToday ? "Today" : d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} {d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} ({iv.durationMinutes}m)
+                      </p>
+                      {iv.interviewers?.length > 0 && <p className="text-xs text-gray-400 truncate">{iv.interviewers.join(", ")}</p>}
+                    </div>
+                    {iv.meetingLink && (
+                      <a href={iv.meetingLink} target="_blank" rel="noreferrer">
+                        <Button variant="outline" size="icon" className="h-6 w-6 text-blue-500 border-blue-200"><Video className="w-3 h-3" /></Button>
+                      </a>
+                    )}
+                    {iv.status === "Scheduled" && (
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-300 hover:text-red-400"
+                        onClick={() => cancelInterviewMutation.mutate(iv.id)}>
+                        <XCircle className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -273,6 +357,21 @@ export default function TicketDetailPage() {
         isPending={statusMutation.isPending} />
 
       <AddCandidateDialog open={addCandidateOpen} onOpenChange={setAddCandidateOpen} ticketId={ticketId} />
+
+      {scheduleForCandidate != null && (
+        <ScheduleInterviewDialog
+          open
+          onOpenChange={(v) => { if (!v) setScheduleForCandidate(null); }}
+          ticketId={ticketId}
+          ticketCandidateId={scheduleForCandidate.tcId || undefined}
+          resumeProfileId={scheduleForCandidate.rpId ?? undefined}
+          candidateName={scheduleForCandidate.name || undefined}
+          onCreated={() => {
+            qc.invalidateQueries({ queryKey: ["interviews", "ticket", ticketId] });
+            setScheduleForCandidate(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import * as React from "react";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, FileText, History, BarChart3, ChevronRight,
-  Users, Briefcase, Zap, ShieldCheck, LogOut, Building2, Search, TrendingUp, Bot, BookOpen, Webhook, TicketCheck
+  Users, Briefcase, Zap, ShieldCheck, LogOut, Building2, Search, TrendingUp, Bot, BookOpen, Webhook, TicketCheck, CalendarDays
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth";
@@ -29,6 +29,7 @@ const ENTERPRISE_ITEMS: NavItem[] = [
   { href: "/analytics", label: "Analytics", icon: TrendingUp, roles: ["super_admin", "hr_admin", "hiring_manager"] },
   { href: "/agent", label: "AI Agent", icon: Bot, roles: ["super_admin", "hr_admin"] },
   { href: "/tickets", label: "Position Board", icon: TicketCheck, roles: ["super_admin", "hr_admin", "recruiter", "hiring_manager"] },
+  { href: "/interviews", label: "Interviews", icon: CalendarDays, roles: ["super_admin", "hr_admin", "recruiter", "hiring_manager"] },
   { href: "/integrations", label: "Integrations", icon: Webhook, roles: ["super_admin", "hr_admin"] },
   { href: "/users", label: "Team", icon: Building2, roles: ["super_admin", "hr_admin"] },
   { href: "/audit-log", label: "Audit Log", icon: ShieldCheck, roles: ["super_admin", "hr_admin"] },

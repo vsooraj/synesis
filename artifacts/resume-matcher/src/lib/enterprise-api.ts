@@ -244,6 +244,29 @@ export const enterpriseApi = {
     reject: (id: number, note?: string) =>
       req<ShortlistJob>("POST", `/enterprise/agent/shortlists/${id}/reject`, { note }),
   },
+  interviews: {
+    list: (params?: { ticketId?: number; status?: string; from?: string; to?: string }) => {
+      const qs = new URLSearchParams();
+      if (params?.ticketId) qs.set("ticketId", String(params.ticketId));
+      if (params?.status) qs.set("status", params.status);
+      if (params?.from) qs.set("from", params.from);
+      if (params?.to) qs.set("to", params.to);
+      return req<InterviewSlot[]>("GET", `/enterprise/interviews?${qs}`);
+    },
+    upcoming: (days = 14) => req<InterviewSlot[]>("GET", `/enterprise/interviews/upcoming?days=${days}`),
+    create: (data: {
+      ticketId: number; ticketCandidateId?: number; resumeProfileId?: number;
+      scheduledAt: string; durationMinutes?: number; type?: string; interviewers?: string[];
+      meetingLink?: string; location?: string; notes?: string;
+    }) => req<InterviewSlot>("POST", "/enterprise/interviews", data),
+    get: (id: number) => req<InterviewSlot>("GET", `/enterprise/interviews/${id}`),
+    update: (id: number, data: Record<string, unknown>) => req<InterviewSlot>("PATCH", `/enterprise/interviews/${id}`, data),
+    complete: (id: number, feedback?: string, rating?: number) =>
+      req<InterviewSlot>("POST", `/enterprise/interviews/${id}/complete`, { feedback, rating }),
+    cancel: (id: number, reason?: string) => req<InterviewSlot>("POST", `/enterprise/interviews/${id}/cancel`, { reason }),
+    noShow: (id: number) => req<InterviewSlot>("POST", `/enterprise/interviews/${id}/noshow`, {}),
+    delete: (id: number) => req<void>("DELETE", `/enterprise/interviews/${id}`),
+  },
   tickets: {
     list: (params?: { status?: string; priority?: string }) => {
       const qs = new URLSearchParams();
@@ -338,6 +361,32 @@ export interface TicketDetail {
     | { type: "comment"; id: number; authorName: string; content: string; at: string }
     | { type: "history"; id: number; authorName: string; field: string; oldValue: string | null; newValue: string | null; at: string }
   >;
+}
+
+export const INTERVIEW_TYPES = ["Phone", "Video", "Technical", "Onsite", "Panel"] as const;
+export const INTERVIEW_STATUSES = ["Scheduled", "Completed", "Cancelled", "No-show"] as const;
+
+export interface InterviewSlot {
+  id: number;
+  tenantId: number;
+  ticketId: number;
+  ticketCandidateId: number | null;
+  resumeProfileId: number | null;
+  interviewers: string[];
+  scheduledAt: string;
+  durationMinutes: number;
+  type: string;
+  status: string;
+  meetingLink: string | null;
+  location: string | null;
+  notes: string | null;
+  feedback: string | null;
+  rating: number | null;
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+  candidate: { id: number; candidateName: string | null; candidateEmail: string | null; fileName: string | null } | null;
+  ticket: { id: number; title: string; status: string } | null;
 }
 
 export interface WorkloadSummary {
