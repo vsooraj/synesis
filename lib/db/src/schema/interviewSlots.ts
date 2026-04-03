@@ -25,6 +25,7 @@ export const interviewSlotsTable = pgTable("interview_slots", {
   location: text("location"),
   notes: text("notes"),
   feedback: text("feedback"),
+  feedbackData: text("feedback_data"),
   rating: integer("rating"),
   createdBy: integer("created_by"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

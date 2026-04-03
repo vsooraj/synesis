@@ -18,10 +18,23 @@ const STATUS_COLORS: Record<string, string> = {
   pending:   "text-blue-600 bg-blue-50 border-blue-200",
 };
 
-const N8N_TEMPLATES = [
-  { name: "Gmail Outreach on Shortlist Approval", file: "gmail-outreach.json", icon: "📧", description: "Sends personalised Gmail to each shortlisted candidate when HR approves" },
-  { name: "Teams Approval Card", file: "teams-approval-card.json", icon: "💬", description: "Posts an Adaptive Card to MS Teams when an AI shortlist is ready for review" },
-  { name: "Outlook Daily Digest", file: "outlook-digest.json", icon: "📊", description: "Sends a daily HTML pipeline digest to your recruiting team via Outlook" },
+const N8N_TEMPLATE_GROUPS = [
+  {
+    category: "Shortlisting & Pipeline",
+    templates: [
+      { name: "Gmail Outreach on Shortlist Approval", file: "gmail-outreach.json", icon: "📧", description: "Sends personalised Gmail to each shortlisted candidate when HR approves", event: "shortlist.approved" },
+      { name: "Teams Approval Card", file: "teams-approval-card.json", icon: "💬", description: "Posts an Adaptive Card to MS Teams when an AI shortlist is ready for review", event: "shortlist.pending_approval" },
+      { name: "Outlook Daily Digest", file: "outlook-digest.json", icon: "📊", description: "Sends a daily HTML pipeline digest to your recruiting team via Outlook", event: null },
+    ],
+  },
+  {
+    category: "Interview Scheduling",
+    templates: [
+      { name: "Teams — Interview Scheduled Notification", file: "teams-interview-notification.json", icon: "🗓️", description: "Posts an Adaptive Card to a MS Teams channel when an interview is scheduled, with date, type, interviewers, and a Join Meeting button", event: "interview.scheduled" },
+      { name: "Outlook — Calendar Invite for Interview", file: "outlook-interview-invite.json", icon: "📅", description: "Creates an Outlook calendar event for each interviewer when an interview is scheduled. Supports online meetings for Video interviews", event: "interview.scheduled" },
+      { name: "Teams — Interviewer Feedback Request", file: "teams-feedback-request.json", icon: "💌", description: "Sends a personalised Teams DM to each interviewer requesting feedback when the recruiter clicks 'Request Feedback'", event: "interview.feedback_requested" },
+    ],
+  },
 ];
 
 export default function IntegrationsPage() {
@@ -252,25 +265,37 @@ export default function IntegrationsPage() {
                 Import these into your n8n instance to get started instantly. Go to n8n → Workflows → Import.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {N8N_TEMPLATES.map(t => (
-                <div key={t.file} className="border rounded-lg p-3 space-y-1.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{t.icon}</span>
-                      <span className="text-sm font-medium leading-tight">{t.name}</span>
-                    </div>
-                    <a
-                      href={`/api/enterprise/webhooks/template/${t.file}`}
-                      download={t.file}
-                      className="flex-shrink-0"
-                    >
-                      <Button size="sm" variant="outline" className="h-7 gap-1 text-xs">
-                        <Download className="h-3 w-3" /> JSON
-                      </Button>
-                    </a>
+            <CardContent className="space-y-5">
+              {N8N_TEMPLATE_GROUPS.map(group => (
+                <div key={group.category} className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{group.category}</p>
+                  <div className="space-y-2">
+                    {group.templates.map(t => (
+                      <div key={t.file} className="border rounded-lg p-3 space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="text-lg shrink-0">{t.icon}</span>
+                            <div className="min-w-0">
+                              <span className="text-sm font-medium leading-tight">{t.name}</span>
+                              {t.event && (
+                                <code className="ml-2 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-mono">{t.event}</code>
+                              )}
+                            </div>
+                          </div>
+                          <a
+                            href={`/api/enterprise/webhooks/template/${t.file}`}
+                            download={t.file}
+                            className="flex-shrink-0"
+                          >
+                            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs">
+                              <Download className="h-3 w-3" /> JSON
+                            </Button>
+                          </a>
+                        </div>
+                        <p className="text-xs text-muted-foreground pl-8">{t.description}</p>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-xs text-muted-foreground pl-8">{t.description}</p>
                 </div>
               ))}
               <div className="pt-1">

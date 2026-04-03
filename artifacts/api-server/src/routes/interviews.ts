@@ -25,7 +25,13 @@ async function enrichSlot(slot: typeof interviewSlotsTable.$inferSelect) {
   const [t] = await db.select({ id: positionTicketsTable.id, title: positionTicketsTable.title, status: positionTicketsTable.status })
     .from(positionTicketsTable).where(eq(positionTicketsTable.id, slot.ticketId));
   ticket = t ?? null;
-  return { ...slot, candidate, ticket, interviewers: JSON.parse(slot.interviewers ?? "[]") };
+  return {
+    ...slot,
+    candidate,
+    ticket,
+    interviewers: JSON.parse(slot.interviewers ?? "[]"),
+    feedbackData: slot.feedbackData ? JSON.parse(slot.feedbackData) : null,
+  };
 }
 
 router.get("/enterprise/interviews", requireAuth, async (req: AuthRequest, res): Promise<void> => {
@@ -102,12 +108,22 @@ router.post("/enterprise/interviews", requireAuth, async (req: AuthRequest, res)
     }).returning();
 
     await logAction(req.user!.tenantId, req.user!.userId, "CREATE_INTERVIEW", "interview_slot", slot.id, { ticketId, scheduledAt, type });
-    emitWebhookEvent(req.user!.tenantId, "interview.scheduled", {
-      interviewId: slot.id, ticketId, positionTitle: ticket.title,
-      scheduledAt, type: slot.type, durationMinutes: slot.durationMinutes,
-    });
 
     const enriched = await enrichSlot(slot);
+    const interviewerList: string[] = Array.isArray(enriched.interviewers) ? enriched.interviewers : [];
+    emitWebhookEvent(req.user!.tenantId, "interview.scheduled", {
+      interviewId: slot.id,
+      ticketId,
+      positionTitle: ticket.title,
+      candidateName: enriched.candidate?.candidateName ?? null,
+      scheduledAt,
+      type: slot.type,
+      durationMinutes: slot.durationMinutes,
+      interviewers: interviewerList,
+      meetingLink: slot.meetingLink ?? null,
+      location: slot.location ?? null,
+    });
+
     res.status(201).json(enriched);
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : "Server error" });
@@ -144,6 +160,9 @@ router.patch("/enterprise/interviews/:id", requireAuth, async (req: AuthRequest,
     if (req.body.interviewers !== undefined) {
       updates.interviewers = JSON.stringify(Array.isArray(req.body.interviewers) ? req.body.interviewers : []);
     }
+    if (req.body.feedbackData !== undefined) {
+      updates.feedbackData = req.body.feedbackData === null ? null : JSON.stringify(req.body.feedbackData);
+    }
 
     const [updated] = await db.update(interviewSlotsTable).set(updates).where(eq(interviewSlotsTable.id, id)).returning();
     res.json(await enrichSlot(updated));
@@ -155,13 +174,59 @@ router.patch("/enterprise/interviews/:id", requireAuth, async (req: AuthRequest,
 router.post("/enterprise/interviews/:id/complete", requireAuth, async (req: AuthRequest, res): Promise<void> => {
   try {
     const id = parseInt(req.params.id);
-    const { feedback, rating } = req.body as { feedback?: string; rating?: number };
+    const { feedback, rating, feedbackData } = req.body as {
+      feedback?: string;
+      rating?: number;
+      feedbackData?: Array<{ dimension: string; score: number; comment?: string }>;
+    };
+
+    const [existing] = await db.select().from(interviewSlotsTable)
+      .where(and(eq(interviewSlotsTable.id, id), eq(interviewSlotsTable.tenantId, req.user!.tenantId)));
+    if (!existing) { res.status(404).json({ error: "Interview not found" }); return; }
+
     const [updated] = await db.update(interviewSlotsTable)
-      .set({ status: "Completed", feedback: feedback ?? null, rating: rating ?? null, updatedAt: new Date() })
+      .set({
+        status: "Completed",
+        feedback: feedback ?? null,
+        rating: rating ?? null,
+        feedbackData: feedbackData ? JSON.stringify(feedbackData) : null,
+        updatedAt: new Date(),
+      })
       .where(and(eq(interviewSlotsTable.id, id), eq(interviewSlotsTable.tenantId, req.user!.tenantId))).returning();
-    if (!updated) { res.status(404).json({ error: "Interview not found" }); return; }
-    await logAction(req.user!.tenantId, req.user!.userId, "COMPLETE_INTERVIEW", "interview_slot", id, { rating });
+
+    await logAction(req.user!.tenantId, req.user!.userId, "COMPLETE_INTERVIEW", "interview_slot", id, { rating, hasFeedbackData: !!feedbackData });
     res.json(await enrichSlot(updated));
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : "Server error" });
+  }
+});
+
+router.post("/enterprise/interviews/:id/request-feedback", requireAuth, async (req: AuthRequest, res): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const [slot] = await db.select().from(interviewSlotsTable)
+      .where(and(eq(interviewSlotsTable.id, id), eq(interviewSlotsTable.tenantId, req.user!.tenantId)));
+    if (!slot) { res.status(404).json({ error: "Interview not found" }); return; }
+
+    const [ticket] = await db.select({ id: positionTicketsTable.id, title: positionTicketsTable.title })
+      .from(positionTicketsTable).where(eq(positionTicketsTable.id, slot.ticketId));
+
+    const enriched = await enrichSlot(slot);
+    const interviewerList: string[] = Array.isArray(enriched.interviewers) ? enriched.interviewers : [];
+
+    emitWebhookEvent(req.user!.tenantId, "interview.feedback_requested", {
+      interviewId: slot.id,
+      ticketId: slot.ticketId,
+      positionTitle: ticket?.title ?? null,
+      candidateName: enriched.candidate?.candidateName ?? null,
+      scheduledAt: slot.scheduledAt,
+      type: slot.type,
+      interviewers: interviewerList,
+      requestedBy: req.user!.userId,
+    });
+
+    await logAction(req.user!.tenantId, req.user!.userId, "REQUEST_INTERVIEW_FEEDBACK", "interview_slot", id, { interviewers: interviewerList });
+    res.json({ success: true, message: `Feedback requested from ${interviewerList.length} interviewer(s)` });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : "Server error" });
   }

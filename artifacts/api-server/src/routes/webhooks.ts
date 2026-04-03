@@ -138,10 +138,8 @@ router.get("/enterprise/webhooks/template/:file", requireAuth, async (req: AuthR
   if (!/^[\w-]+\.json$/.test(file)) { res.status(400).json({ error: "Invalid file" }); return; }
   try {
     const { readFile } = await import("fs/promises");
-    const { join, dirname } = await import("path");
-    const { fileURLToPath } = await import("url");
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const templatePath = join(__dirname, "../../../../../docs/n8n", file);
+    const { join } = await import("path");
+    const templatePath = join(process.cwd(), "../../docs/n8n", file);
     const content = await readFile(templatePath, "utf-8");
     res.setHeader("Content-Type", "application/json");
     res.setHeader("Content-Disposition", `attachment; filename="${file}"`);

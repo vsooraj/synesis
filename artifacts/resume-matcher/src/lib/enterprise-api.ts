@@ -162,13 +162,15 @@ export interface WebhookDelivery {
 }
 
 export const WEBHOOK_EVENT_LABELS: Record<string, string> = {
-  "candidate.uploaded":         "Resume added to talent pool",
-  "shortlist.pending_approval": "AI agent finished — awaiting HR review",
-  "shortlist.approved":         "HR approved a shortlist",
-  "shortlist.rejected":         "HR rejected a shortlist",
-  "bulk_job.completed":         "Bulk analysis job finished",
-  "position.opened":            "New position ticket created",
-  "position.closed":            "Position filled or cancelled",
+  "candidate.uploaded":              "Resume added to talent pool",
+  "shortlist.pending_approval":      "AI agent finished — awaiting HR review",
+  "shortlist.approved":              "HR approved a shortlist",
+  "shortlist.rejected":              "HR rejected a shortlist",
+  "bulk_job.completed":             "Bulk analysis job finished",
+  "position.opened":                 "New position ticket created",
+  "position.closed":                 "Position filled or cancelled",
+  "interview.scheduled":             "Interview scheduled for a candidate",
+  "interview.feedback_requested":    "Feedback requested from interviewers",
 };
 
 export const enterpriseApi = {
@@ -261,10 +263,11 @@ export const enterpriseApi = {
     }) => req<InterviewSlot>("POST", "/enterprise/interviews", data),
     get: (id: number) => req<InterviewSlot>("GET", `/enterprise/interviews/${id}`),
     update: (id: number, data: Record<string, unknown>) => req<InterviewSlot>("PATCH", `/enterprise/interviews/${id}`, data),
-    complete: (id: number, feedback?: string, rating?: number) =>
-      req<InterviewSlot>("POST", `/enterprise/interviews/${id}/complete`, { feedback, rating }),
+    complete: (id: number, feedback?: string, rating?: number, feedbackData?: FeedbackDimension[]) =>
+      req<InterviewSlot>("POST", `/enterprise/interviews/${id}/complete`, { feedback, rating, feedbackData }),
     cancel: (id: number, reason?: string) => req<InterviewSlot>("POST", `/enterprise/interviews/${id}/cancel`, { reason }),
     noShow: (id: number) => req<InterviewSlot>("POST", `/enterprise/interviews/${id}/noshow`, {}),
+    requestFeedback: (id: number) => req<{ success: boolean; message: string }>("POST", `/enterprise/interviews/${id}/request-feedback`, {}),
     delete: (id: number) => req<void>("DELETE", `/enterprise/interviews/${id}`),
   },
   tickets: {
@@ -366,6 +369,12 @@ export interface TicketDetail {
 export const INTERVIEW_TYPES = ["Phone", "Video", "Technical", "Onsite", "Panel"] as const;
 export const INTERVIEW_STATUSES = ["Scheduled", "Completed", "Cancelled", "No-show"] as const;
 
+export interface FeedbackDimension {
+  dimension: string;
+  score: number;
+  comment?: string;
+}
+
 export interface InterviewSlot {
   id: number;
   tenantId: number;
@@ -381,6 +390,7 @@ export interface InterviewSlot {
   location: string | null;
   notes: string | null;
   feedback: string | null;
+  feedbackData: FeedbackDimension[] | null;
   rating: number | null;
   createdBy: number | null;
   createdAt: string;

@@ -1,0 +1,63 @@
+{
+  "name": "Teams — Interview Scheduled Notification",
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "MatchPoint Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "matchpoint-interview-scheduled",
+        "httpMethod": "POST",
+        "authentication": "headerAuth"
+      },
+      "position": [240, 300]
+    },
+    {
+      "id": "filter-event",
+      "name": "Filter: interview.scheduled",
+      "type": "n8n-nodes-base.if",
+      "parameters": {
+        "conditions": {
+          "string": [{ "value1": "={{ $json.event }}", "operation": "equals", "value2": "interview.scheduled" }]
+        }
+      },
+      "position": [460, 300]
+    },
+    {
+      "id": "build-card",
+      "name": "Build Adaptive Card",
+      "type": "n8n-nodes-base.set",
+      "parameters": {
+        "values": {
+          "object": [
+            {
+              "name": "adaptiveCard",
+              "value": "={{ JSON.stringify({ type: 'message', attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', content: { '$schema': 'http://adaptivecards.io/schemas/adaptive-card.json', type: 'AdaptiveCard', version: '1.4', body: [ { type: 'TextBlock', size: 'Medium', weight: 'Bolder', text: '📅 Interview Scheduled — ' + $json.payload.positionTitle }, { type: 'FactSet', facts: [ { title: 'Candidate', value: $json.payload.candidateName || '(no candidate linked)' }, { title: 'Date & Time', value: new Date($json.payload.scheduledAt).toLocaleString() }, { title: 'Type', value: $json.payload.type }, { title: 'Duration', value: $json.payload.durationMinutes + ' minutes' }, { title: 'Interviewers', value: ($json.payload.interviewers || []).join(', ') || 'TBD' } ] }, $json.payload.meetingLink ? { type: 'ActionSet', actions: [ { type: 'Action.OpenUrl', title: 'Join Meeting', url: $json.payload.meetingLink } ] } : null ].filter(Boolean) } }] }) }}"
+            }
+          ]
+        }
+      },
+      "position": [680, 280]
+    },
+    {
+      "id": "post-teams",
+      "name": "Post to Teams Channel",
+      "type": "n8n-nodes-base.microsoftTeams",
+      "parameters": {
+        "operation": "create",
+        "resource": "channelMessage",
+        "teamId": "YOUR_TEAM_ID",
+        "channelId": "YOUR_CHANNEL_ID",
+        "contentType": "html",
+        "content": "={{ $json.adaptiveCard }}"
+      },
+      "position": [900, 280]
+    }
+  ],
+  "connections": {
+    "MatchPoint Webhook": { "main": [[{ "node": "Filter: interview.scheduled", "type": "main", "index": 0 }]] },
+    "Filter: interview.scheduled": { "main": [[{ "node": "Build Adaptive Card", "type": "main", "index": 0 }]] },
+    "Build Adaptive Card": { "main": [[{ "node": "Post to Teams Channel", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

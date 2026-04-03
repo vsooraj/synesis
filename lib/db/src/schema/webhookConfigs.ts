@@ -9,6 +9,8 @@ export const WEBHOOK_EVENTS = [
   "bulk_job.completed",
   "position.opened",
   "position.closed",
+  "interview.scheduled",
+  "interview.feedback_requested",
 ] as const;
 
 export type WebhookEvent = typeof WEBHOOK_EVENTS[number];
