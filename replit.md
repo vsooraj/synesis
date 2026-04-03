@@ -57,14 +57,17 @@ MatchPoint Enterprise — AI-powered talent intelligence platform.
 | recruiter | Run analyses, manage candidate pool |
 | employee | Upload own resume, view own analyses |
 
-## Enterprise Features (Phase 1 + 2)
+## Enterprise Features (All Phases)
 
 - **Multi-tenancy**: All data isolated by tenant_id
 - **JWT Auth**: Register org → get token → access enterprise features
-- **Resume Pool**: Upload PDF or paste text, generates OpenAI embeddings for future search
+- **Resume Pool**: Upload PDF or paste text, sanitized & stored
 - **JD Management**: Create/edit/delete job descriptions with Draft/Active/Closed status
 - **Bulk Analysis**: Submit N candidates against one JD, async background processing, CSV export
 - **Audit Log**: Append-only record of every enterprise action
+- **Talent Pool Search** (Phase 3): TF-IDF semantic search across all candidate resumes with best-snippet highlighting
+- **Skills Gap Analytics** (Phase 3): Aggregate gap/strength frequency from all analyses, score distribution charts, section score radial charts
+- **AI Shortlisting Agent** (Phase 4): Async agentic pipeline — TF-IDF ranks candidates → GPT-5.2 analyses each → ranked shortlist report → HR approves/rejects (human-in-the-loop), full agent step log
 
 ## Key Commands
 

@@ -84,6 +84,60 @@ export interface AuditEntry {
   createdAt: string;
 }
 
+export interface SearchResult {
+  id: number;
+  candidateName: string | null;
+  candidateEmail: string | null;
+  candidateType: string;
+  fileName: string | null;
+  similarityScore: number;
+  snippet: string;
+  createdAt: string;
+}
+
+export interface SkillsGapData {
+  gaps: Array<{ label: string; count: number; pct: number }>;
+  strengths: Array<{ label: string; count: number; pct: number }>;
+  totalAnalyses: number;
+  avgSectionScores: { skills: number; experience: number; education: number; keywords: number } | null;
+}
+
+export interface ScoreDistData {
+  buckets: Array<{ range: string; count: number }>;
+  totalAnalyses: number;
+}
+
+export interface ShortlistJob {
+  id: number;
+  tenantId: number;
+  createdBy: number | null;
+  jobDescriptionId: number;
+  status: string;
+  scoreThreshold: number;
+  maxCandidates: number;
+  totalSearched: number;
+  totalShortlisted: number;
+  reportMarkdown: string | null;
+  agentLog: string[];
+  approvedBy: number | null;
+  approvalNote: string | null;
+  createdAt: string;
+  completedAt: string | null;
+  approvedAt: string | null;
+}
+
+export interface ShortlistResult {
+  id: number;
+  resumeProfileId: number;
+  similarityScore: number | null;
+  overallScore: number | null;
+  summary: string | null;
+  strengths: string[] | null;
+  gaps: string[] | null;
+  included: string;
+  candidate?: { id: number; candidateName: string | null; candidateEmail: string | null; fileName: string | null; candidateType: string } | null;
+}
+
 export const enterpriseApi = {
   auth: {
     register: (data: { email: string; name: string; password: string; tenantName: string }) =>
@@ -138,5 +192,23 @@ export const enterpriseApi = {
   },
   auditLog: {
     list: (limit?: number) => req<AuditEntry[]>("GET", `/enterprise/audit-log${limit ? `?limit=${limit}` : ""}`),
+  },
+  search: {
+    talent: (data: { query: string; limit?: number; candidateType?: string }) =>
+      req<{ results: SearchResult[]; query: string; embeddingUsed: boolean }>("POST", "/enterprise/search/talent", data),
+  },
+  analytics: {
+    skillsGap: () => req<SkillsGapData>("GET", "/enterprise/analytics/skills-gap"),
+    scoreDistribution: () => req<ScoreDistData>("GET", "/enterprise/analytics/score-distribution"),
+  },
+  agent: {
+    list: () => req<ShortlistJob[]>("GET", "/enterprise/agent/shortlists"),
+    get: (id: number) => req<{ job: ShortlistJob; results: ShortlistResult[] }>("GET", `/enterprise/agent/shortlists/${id}`),
+    create: (data: { jobDescriptionId: number; scoreThreshold?: number; maxCandidates?: number }) =>
+      req<ShortlistJob>("POST", "/enterprise/agent/shortlists", data),
+    approve: (id: number, note?: string) =>
+      req<ShortlistJob>("POST", `/enterprise/agent/shortlists/${id}/approve`, { note }),
+    reject: (id: number, note?: string) =>
+      req<ShortlistJob>("POST", `/enterprise/agent/shortlists/${id}/reject`, { note }),
   },
 };

@@ -5,3 +5,4 @@ export * from "./resumeProfiles";
 export * from "./jobDescriptions";
 export * from "./bulkJobs";
 export * from "./auditLog";
+export * from "./shortlistJobs";

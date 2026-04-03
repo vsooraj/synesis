@@ -16,6 +16,9 @@ import JobDescriptions from "@/pages/job-descriptions";
 import BulkJobs from "@/pages/bulk-jobs";
 import UsersPage from "@/pages/users";
 import AuditLogPage from "@/pages/audit-log";
+import TalentSearch from "@/pages/talent-search";
+import Analytics from "@/pages/analytics";
+import AgentPage from "@/pages/agent";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -69,6 +72,15 @@ function Router() {
       </Route>
       <Route path="/audit-log">
         {() => <ProtectedRoute component={AuditLogPage} roles={["super_admin", "hr_admin"]} />}
+      </Route>
+      <Route path="/talent-search">
+        {() => <ProtectedRoute component={TalentSearch} roles={["super_admin", "hr_admin", "recruiter", "hiring_manager"]} />}
+      </Route>
+      <Route path="/analytics">
+        {() => <ProtectedRoute component={Analytics} roles={["super_admin", "hr_admin", "hiring_manager"]} />}
+      </Route>
+      <Route path="/agent">
+        {() => <ProtectedRoute component={AgentPage} roles={["super_admin", "hr_admin"]} />}
       </Route>
       <Route component={NotFound} />
     </Switch>
