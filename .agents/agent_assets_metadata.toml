@@ -36,3 +36,9 @@ id = "jqSlHIZA_Qo4ewqdGM0TC"
 uri = "file://docs/MatchPoint-Enterprise-Azure-Deployment.md"
 type = "text"
 title = "MatchPoint Enterprise — Azure Deployment Guide"
+
+[[outputs]]
+id = "vorZdWUb6LYuEfw-9KJRD"
+uri = "file://docs/MatchPoint-Enterprise-Azure-Minimal.md"
+type = "text"
+title = "MatchPoint Enterprise — Minimal Azure Deployment (~$25/month)"
