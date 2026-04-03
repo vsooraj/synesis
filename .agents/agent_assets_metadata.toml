@@ -48,3 +48,9 @@ id = "6ESGdcwdOuDlbvm42Fx64"
 uri = "file://docs/MatchPoint-Enterprise-Azure-n8n-AI.md"
 type = "text"
 title = "MatchPoint Enterprise — n8n & AI Engine on Azure"
+
+[[outputs]]
+id = "dhLGY2-Iwis5qzok0zsE_"
+uri = "file://docs/MatchPoint-Enterprise-User-Manual.pdf"
+type = "pdf"
+title = "MatchPoint Enterprise — User Manual (PDF with screenshots)"
