@@ -9,3 +9,7 @@ export * from "./shortlistJobs";
 export * from "./resumeChunks";
 export * from "./webhookConfigs";
 export * from "./webhookDeliveries";
+export * from "./positionTickets";
+export * from "./ticketComments";
+export * from "./ticketCandidates";
+export * from "./ticketHistory";

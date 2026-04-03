@@ -31,6 +31,11 @@ MatchPoint Enterprise is an AI-powered **end-to-end talent intelligence and recr
 | → Per-tenant event filtering | ✅ Live |
 | → Integrations settings UI + delivery log | ✅ Live |
 | → n8n workflow templates (Gmail, Teams, Outlook) | ✅ Live |
+| Phase 7 — HR Ticketing System | ✅ Live |
+| → 7-column Kanban board with drag-and-drop | ✅ Live |
+| → SLA engine (per-priority deadlines + breach alerts) | ✅ Live |
+| → Ticket detail (activity feed, candidate pipeline) | ✅ Live |
+| → Recruiter workload view | ✅ Live |
 
 ---
 

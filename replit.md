@@ -70,6 +70,7 @@ MatchPoint Enterprise — AI-powered talent intelligence platform.
 - **AI Shortlisting Agent** (Phase 4): Async agentic pipeline — TF-IDF ranks candidates → GPT-5.2 analyses each → ranked shortlist report → HR approves/rejects (human-in-the-loop), full agent step log
 - **RAG Search**: BM25-powered retrieval-augmented generation — resumes chunked by section on upload, BM25 retrieves top chunks, GPT-5.2 generates cited answers. Chat UI with source citations showing candidate name, section, snippet and BM25 score
 - **Phase 5 — n8n Integration Hub**: Webhook engine with HMAC-SHA256 signatures, 3-attempt retry with backoff, per-tenant event filtering; 7 platform events instrumented (candidate.uploaded, shortlist lifecycle, bulk_job.completed); Integrations settings page with delivery log + test buttons; 3 n8n workflow templates (Gmail outreach, Teams approval card, Outlook digest)
+- **Phase 7 — HR Ticketing System**: 4 DB tables (position_tickets, ticket_comments, ticket_candidates, ticket_history); 7-column Kanban board with drag-and-drop status moves (Draft→Open→Sourcing→Screening→Interviewing→Offer→Closed); SLA engine with per-priority deadlines and breach detection; ticket detail with activity feed (history+comments), candidate pipeline with stage tracking; recruiter workload view with bar chart and SLA breach counts; webhook events for position.opened/closed
 
 ## Key Commands
 

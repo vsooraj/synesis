@@ -21,6 +21,9 @@ import Analytics from "@/pages/analytics";
 import AgentPage from "@/pages/agent";
 import RagPage from "@/pages/rag";
 import IntegrationsPage from "@/pages/integrations";
+import TicketsPage from "@/pages/tickets";
+import TicketDetailPage from "@/pages/ticket-detail";
+import TicketsWorkloadPage from "@/pages/tickets-workload";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -89,6 +92,15 @@ function Router() {
       </Route>
       <Route path="/integrations">
         {() => <ProtectedRoute component={IntegrationsPage} roles={["super_admin", "hr_admin"]} />}
+      </Route>
+      <Route path="/tickets/workload">
+        {() => <ProtectedRoute component={TicketsWorkloadPage} roles={["super_admin", "hr_admin", "recruiter", "hiring_manager"]} />}
+      </Route>
+      <Route path="/tickets/:id">
+        {() => <ProtectedRoute component={TicketDetailPage} roles={["super_admin", "hr_admin", "recruiter", "hiring_manager"]} />}
+      </Route>
+      <Route path="/tickets">
+        {() => <ProtectedRoute component={TicketsPage} roles={["super_admin", "hr_admin", "recruiter", "hiring_manager"]} />}
       </Route>
       <Route component={NotFound} />
     </Switch>

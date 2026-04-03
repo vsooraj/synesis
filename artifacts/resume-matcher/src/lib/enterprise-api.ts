@@ -244,6 +244,26 @@ export const enterpriseApi = {
     reject: (id: number, note?: string) =>
       req<ShortlistJob>("POST", `/enterprise/agent/shortlists/${id}/reject`, { note }),
   },
+  tickets: {
+    list: (params?: { status?: string; priority?: string }) => {
+      const qs = new URLSearchParams();
+      if (params?.status) qs.set("status", params.status);
+      if (params?.priority) qs.set("priority", params.priority);
+      return req<Ticket[]>("GET", `/enterprise/tickets?${qs}`);
+    },
+    create: (data: { title: string; priority?: string; department?: string; location?: string; openings?: number; description?: string; jobDescriptionId?: number; targetStartDate?: string }) =>
+      req<Ticket>("POST", "/enterprise/tickets", data),
+    get: (id: number) => req<TicketDetail>("GET", `/enterprise/tickets/${id}`),
+    update: (id: number, data: Record<string, unknown>) => req<Ticket>("PATCH", `/enterprise/tickets/${id}`, data),
+    setStatus: (id: number, status: string, closeReason?: string) => req<Ticket>("POST", `/enterprise/tickets/${id}/status`, { status, closeReason }),
+    delete: (id: number) => req<void>("DELETE", `/enterprise/tickets/${id}`),
+    addComment: (id: number, content: string) => req<TicketComment>("POST", `/enterprise/tickets/${id}/comments`, { content }),
+    deleteComment: (id: number, commentId: number) => req<void>("DELETE", `/enterprise/tickets/${id}/comments/${commentId}`),
+    addCandidate: (id: number, resumeProfileId: number, stage?: string) => req<TicketCandidate>("POST", `/enterprise/tickets/${id}/candidates`, { resumeProfileId, stage }),
+    updateCandidateStage: (id: number, tcId: number, stage: string) => req<TicketCandidate>("PATCH", `/enterprise/tickets/${id}/candidates/${tcId}`, { stage }),
+    removeCandidate: (id: number, tcId: number) => req<void>("DELETE", `/enterprise/tickets/${id}/candidates/${tcId}`),
+    workload: () => req<WorkloadSummary>("GET", "/enterprise/tickets/workload/summary"),
+  },
   webhooks: {
     getConfig: () => req<WebhookConfig | null>("GET", "/enterprise/webhooks/config"),
     saveConfig: (data: { url: string; enabledEvents?: string[]; enabled?: boolean; description?: string }) =>
@@ -254,6 +274,78 @@ export const enterpriseApi = {
     getEvents: () => req<{ events: string[] }>("GET", "/enterprise/webhooks/events"),
   },
 };
+
+export const TICKET_STATUSES = ["Draft", "Open", "Sourcing", "Screening", "Interviewing", "Offer", "Closed"] as const;
+export const TICKET_PRIORITIES = ["Critical", "High", "Medium", "Low"] as const;
+export const CANDIDATE_STAGES = ["Applied", "Screening", "Interview", "Final", "Offered", "Hired", "Rejected"] as const;
+
+export const PRIORITY_COLORS: Record<string, string> = {
+  Critical: "border-red-400 text-red-700 bg-red-50",
+  High: "border-orange-400 text-orange-700 bg-orange-50",
+  Medium: "border-yellow-400 text-yellow-700 bg-yellow-50",
+  Low: "border-gray-300 text-gray-600 bg-gray-50",
+};
+
+export const SLA_BADGE: Record<string, { cls: string }> = {
+  ok: { cls: "bg-green-100 text-green-700" },
+  warning: { cls: "bg-amber-100 text-amber-700" },
+  critical: { cls: "bg-orange-100 text-orange-800" },
+  breached: { cls: "bg-red-100 text-red-700" },
+};
+
+export interface Ticket {
+  id: number;
+  tenantId: number;
+  title: string;
+  jobDescriptionId: number | null;
+  status: string;
+  priority: string;
+  assignedTo: string;
+  hiringManagerId: number | null;
+  department: string | null;
+  location: string | null;
+  salaryRange: string | null;
+  openings: number;
+  filled: number;
+  targetStartDate: string | null;
+  closeReason: string | null;
+  tags: string;
+  description: string | null;
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+  sla: {
+    daysRemaining: number;
+    slaBreach: boolean;
+    slaStatus: "ok" | "warning" | "critical" | "breached";
+    deadline: string;
+    pct: number;
+  };
+}
+
+export interface TicketComment { id: number; ticketId: number; userId: number; authorName: string; content: string; createdAt: string; }
+export interface TicketHistory { id: number; ticketId: number; userId: number; authorName: string; field: string; oldValue: string | null; newValue: string | null; changedAt: string; }
+export interface TicketCandidate {
+  id: number; ticketId: number; resumeProfileId: number; stage: string; note: string | null; addedBy: number | null;
+  candidate: { id: number; candidateName: string | null; candidateEmail: string | null; fileName: string | null; candidateType: string; } | null;
+}
+
+export interface TicketDetail {
+  ticket: Ticket;
+  jd: { id: number; title: string; company: string | null; status: string } | null;
+  candidates: TicketCandidate[];
+  activity: Array<
+    | { type: "comment"; id: number; authorName: string; content: string; at: string }
+    | { type: "history"; id: number; authorName: string; field: string; oldValue: string | null; newValue: string | null; at: string }
+  >;
+}
+
+export interface WorkloadSummary {
+  totalTickets: number;
+  openTickets: number;
+  statusCounts: Record<string, number>;
+  workload: Array<{ assignee: string; tickets: { id: number; title: string; status: string; priority: string }[]; breached: number; warning: number; ok: number }>;
+}
 
 export function getRagStats() {
   return req<{ totalChunks: number; indexedResumes: number }>("GET", "/enterprise/rag/stats");

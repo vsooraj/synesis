@@ -11,6 +11,7 @@ import talentSearchRouter from "./talentSearch.js";
 import agentShortlistRouter from "./agentShortlist.js";
 import ragRouter from "./rag.js";
 import webhooksRouter from "./webhooks.js";
+import ticketsRouter from "./tickets.js";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(talentSearchRouter);
 router.use(agentShortlistRouter);
 router.use(ragRouter);
 router.use(webhooksRouter);
+router.use(ticketsRouter);
 
 export default router;
