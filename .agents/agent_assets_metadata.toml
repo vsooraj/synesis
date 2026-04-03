@@ -42,3 +42,9 @@ id = "vorZdWUb6LYuEfw-9KJRD"
 uri = "file://docs/MatchPoint-Enterprise-Azure-Minimal.md"
 type = "text"
 title = "MatchPoint Enterprise — Minimal Azure Deployment (~$25/month)"
+
+[[outputs]]
+id = "6ESGdcwdOuDlbvm42Fx64"
+uri = "file://docs/MatchPoint-Enterprise-Azure-n8n-AI.md"
+type = "text"
+title = "MatchPoint Enterprise — n8n & AI Engine on Azure"
