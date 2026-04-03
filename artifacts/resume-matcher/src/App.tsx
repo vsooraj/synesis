@@ -20,6 +20,7 @@ import TalentSearch from "@/pages/talent-search";
 import Analytics from "@/pages/analytics";
 import AgentPage from "@/pages/agent";
 import RagPage from "@/pages/rag";
+import IntegrationsPage from "@/pages/integrations";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -85,6 +86,9 @@ function Router() {
       </Route>
       <Route path="/rag">
         {() => <ProtectedRoute component={RagPage} roles={["super_admin", "hr_admin", "recruiter", "hiring_manager"]} />}
+      </Route>
+      <Route path="/integrations">
+        {() => <ProtectedRoute component={IntegrationsPage} roles={["super_admin", "hr_admin"]} />}
       </Route>
       <Route component={NotFound} />
     </Switch>

@@ -1,0 +1,58 @@
+{
+  "name": "MatchPoint — Daily Recruiter Digest via Outlook",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 24 }]
+        }
+      },
+      "name": "Schedule: Daily 8am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.MATCHPOINT_API_URL }}/enterprise/analytics/score-distribution",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "name": "Fetch Pipeline Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.MATCHPOINT_API_URL }}/enterprise/agent/shortlists",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "name": "Fetch Pending Shortlists",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [470, 460]
+    },
+    {
+      "parameters": {
+        "toRecipients": "={{ $env.RECRUITER_EMAIL_LIST }}",
+        "subject": "MatchPoint Daily Digest — {{ $today.format('DD MMM YYYY') }}",
+        "bodyType": "html",
+        "body": "<h2>MatchPoint Daily Digest</h2><h3>Pipeline Summary</h3><p>Total analyses run: {{ $node['Fetch Pipeline Stats'].json.total }}</p><h3>Pending Approvals</h3><p>{{ $node['Fetch Pending Shortlists'].json.filter(s => s.status === 'Pending Approval').length }} shortlists awaiting your review.</p><p><a href='{{ $env.MATCHPOINT_APP_URL }}/agent'>Open MatchPoint Agent →</a></p>",
+        "options": {}
+      },
+      "name": "Send Outlook Digest",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "position": [690, 380]
+    }
+  ],
+  "connections": {
+    "Schedule: Daily 8am": { "main": [[{ "node": "Fetch Pipeline Stats", "type": "main", "index": 0 }, { "node": "Fetch Pending Shortlists", "type": "main", "index": 0 }]] },
+    "Fetch Pipeline Stats": { "main": [[{ "node": "Send Outlook Digest", "type": "main", "index": 0 }]] },
+    "Fetch Pending Shortlists": { "main": [[{ "node": "Send Outlook Digest", "type": "main", "index": 0 }]] }
+  },
+  "_meta": {
+    "templateId": "matchpoint-outlook-digest",
+    "description": "Sends a daily HTML digest email via Outlook to your recruiting team with pipeline stats and pending approvals. Requires: RECRUITER_EMAIL_LIST env var, MATCHPOINT_APP_URL env var, MATCHPOINT_API_URL env var, Microsoft Outlook OAuth2 credential."
+  }
+}

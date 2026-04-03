@@ -1,0 +1,51 @@
+{
+  "name": "MatchPoint — Teams Approval Card on Shortlist Ready",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "matchpoint-shortlist-pending",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "name": "MatchPoint Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "webhookId": "matchpoint-shortlist-pending"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.event }}",
+              "value2": "shortlist.pending_approval"
+            }
+          ]
+        }
+      },
+      "name": "Filter: pending_approval",
+      "type": "n8n-nodes-base.if",
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "operation": "post",
+        "chatId": "={{ $env.TEAMS_HR_CHANNEL_ID }}",
+        "messageType": "adaptiveCard",
+        "message": "={{ JSON.stringify({ \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\", \"type\": \"AdaptiveCard\", \"version\": \"1.4\", \"body\": [{ \"type\": \"TextBlock\", \"size\": \"Medium\", \"weight\": \"Bolder\", \"text\": \"🎯 Shortlist Ready for Approval\" }, { \"type\": \"FactSet\", \"facts\": [{ \"title\": \"Role\", \"value\": $json.data.jobTitle }, { \"title\": \"Shortlisted\", \"value\": String($json.data.totalShortlisted) + \" candidates\" }, { \"title\": \"Shortlist ID\", \"value\": String($json.data.shortlistId) }] }], \"actions\": [{ \"type\": \"Action.OpenUrl\", \"title\": \"Review in MatchPoint\", \"url\": $env.MATCHPOINT_APP_URL + \"/agent\" }] }) }}"
+      },
+      "name": "Post to Teams",
+      "type": "n8n-nodes-base.microsoftTeams",
+      "position": [690, 220]
+    }
+  ],
+  "connections": {
+    "MatchPoint Webhook": { "main": [[{ "node": "Filter: pending_approval", "type": "main", "index": 0 }]] },
+    "Filter: pending_approval": { "main": [[{ "node": "Post to Teams", "type": "main", "index": 0 }]] }
+  },
+  "_meta": {
+    "templateId": "matchpoint-teams-approval",
+    "description": "Posts an Adaptive Card to a Microsoft Teams channel when an AI shortlist is ready for HR approval. Requires: TEAMS_HR_CHANNEL_ID env var, MATCHPOINT_APP_URL env var, Microsoft Teams credential."
+  }
+}

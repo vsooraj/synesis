@@ -4,6 +4,7 @@ import { db, bulkJobsTable, bulkJobResultsTable, resumeProfilesTable, jobDescrip
 import { requireAuth, requireRole, type AuthRequest } from "../middleware/auth.js";
 import { logAction } from "../lib/audit.js";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { emitWebhookEvent } from "../lib/webhookDelivery.js";
 
 const router: IRouter = Router();
 
@@ -101,9 +102,22 @@ async function processBulkJob(jobId: number) {
     await db.update(bulkJobsTable).set({ processed, failed }).where(eq(bulkJobsTable.id, jobId));
   }
 
-  await db.update(bulkJobsTable)
+  const [completedJob] = await db.update(bulkJobsTable)
     .set({ status: "Complete", processed, failed, completedAt: new Date() })
-    .where(eq(bulkJobsTable.id, jobId));
+    .where(eq(bulkJobsTable.id, jobId))
+    .returning();
+
+  if (completedJob) {
+    const [jdInfo] = await db.select({ title: jobDescriptionsTable.title })
+      .from(jobDescriptionsTable).where(eq(jobDescriptionsTable.id, completedJob.jobDescriptionId));
+    emitWebhookEvent(completedJob.tenantId, "bulk_job.completed", {
+      bulkJobId: jobId,
+      jobTitle: jdInfo?.title ?? "Unknown",
+      totalCandidates: processed + failed,
+      processed,
+      failed,
+    });
+  }
 }
 
 router.post("/enterprise/bulk-jobs", requireAuth, requireRole("super_admin", "hr_admin", "recruiter"), async (req: AuthRequest, res): Promise<void> => {

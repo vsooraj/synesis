@@ -7,3 +7,5 @@ export * from "./bulkJobs";
 export * from "./auditLog";
 export * from "./shortlistJobs";
 export * from "./resumeChunks";
+export * from "./webhookConfigs";
+export * from "./webhookDeliveries";

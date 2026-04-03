@@ -5,6 +5,7 @@ import { requireAuth, type AuthRequest } from "../middleware/auth.js";
 import { logAction } from "../lib/audit.js";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { cosineSimilarity, tokenize, tfidfScore, buildIdf } from "./talentSearch.js";
+import { emitWebhookEvent } from "../lib/webhookDelivery.js";
 
 const router: IRouter = Router();
 
@@ -178,6 +179,14 @@ async function runAgentPipeline(jobId: number, tenantId: number, userId: number)
 
     await appendLog(`Pipeline complete — ${passing.length} candidates shortlisted. Awaiting HR approval.`);
     await logAction(tenantId, userId, "AGENT_SHORTLIST_COMPLETE", "shortlist_job", jobId, { shortlisted: passing.length });
+
+    emitWebhookEvent(tenantId, "shortlist.pending_approval", {
+      shortlistId: jobId,
+      jobTitle: jd.title,
+      totalShortlisted: passing.length,
+      totalSearched: topCandidates.length,
+      scoreThreshold: job.scoreThreshold,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     await db.update(shortlistJobsTable).set({ status: "Failed" }).where(eq(shortlistJobsTable.id, jobId));
@@ -292,6 +301,15 @@ router.post("/enterprise/agent/shortlists/:id/approve", requireAuth, async (req:
     }).where(eq(shortlistJobsTable.id, id)).returning();
 
     await logAction(req.user!.tenantId, req.user!.userId, "APPROVE_SHORTLIST", "shortlist_job", id, { note });
+
+    emitWebhookEvent(req.user!.tenantId, "shortlist.approved", {
+      shortlistId: id,
+      jobDescriptionId: updated.jobDescriptionId,
+      totalShortlisted: updated.totalShortlisted,
+      approvedBy: req.user!.userId,
+      note: note ?? null,
+    });
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : "Server error" });
@@ -316,6 +334,14 @@ router.post("/enterprise/agent/shortlists/:id/reject", requireAuth, async (req: 
     }).where(eq(shortlistJobsTable.id, id)).returning();
 
     await logAction(req.user!.tenantId, req.user!.userId, "REJECT_SHORTLIST", "shortlist_job", id, { note });
+
+    emitWebhookEvent(req.user!.tenantId, "shortlist.rejected", {
+      shortlistId: id,
+      jobDescriptionId: updated.jobDescriptionId,
+      rejectedBy: req.user!.userId,
+      note: note ?? null,
+    });
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : "Server error" });

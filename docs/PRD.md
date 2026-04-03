@@ -25,6 +25,12 @@ MatchPoint Enterprise is an AI-powered **end-to-end talent intelligence and recr
 | Skills gap analytics + score charts | ✅ Live |
 | AI agent shortlisting pipeline (human-in-the-loop) | ✅ Live |
 | RAG search (BM25 + GPT-5.2, cited answers) | ✅ Live |
+| Phase 5 — n8n Integration Hub | ✅ Live |
+| → Webhook engine (HMAC-SHA256, 3-attempt retry) | ✅ Live |
+| → 7 platform events instrumented | ✅ Live |
+| → Per-tenant event filtering | ✅ Live |
+| → Integrations settings UI + delivery log | ✅ Live |
+| → n8n workflow templates (Gmail, Teams, Outlook) | ✅ Live |
 
 ---
 

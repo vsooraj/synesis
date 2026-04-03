@@ -138,6 +138,39 @@ export interface ShortlistResult {
   candidate?: { id: number; candidateName: string | null; candidateEmail: string | null; fileName: string | null; candidateType: string } | null;
 }
 
+export interface WebhookConfig {
+  id?: number;
+  url: string;
+  enabledEvents: string;
+  enabled: boolean;
+  description?: string | null;
+  updatedAt?: string;
+}
+
+export interface WebhookDelivery {
+  id: number;
+  tenantId: number;
+  event: string;
+  payload: unknown;
+  status: string;
+  attempts: number;
+  lastAttemptAt: string | null;
+  deliveredAt: string | null;
+  lastError: string | null;
+  responseStatus: number | null;
+  createdAt: string;
+}
+
+export const WEBHOOK_EVENT_LABELS: Record<string, string> = {
+  "candidate.uploaded":         "Resume added to talent pool",
+  "shortlist.pending_approval": "AI agent finished — awaiting HR review",
+  "shortlist.approved":         "HR approved a shortlist",
+  "shortlist.rejected":         "HR rejected a shortlist",
+  "bulk_job.completed":         "Bulk analysis job finished",
+  "position.opened":            "New position ticket created",
+  "position.closed":            "Position filled or cancelled",
+};
+
 export const enterpriseApi = {
   auth: {
     register: (data: { email: string; name: string; password: string; tenantName: string }) =>
@@ -210,6 +243,15 @@ export const enterpriseApi = {
       req<ShortlistJob>("POST", `/enterprise/agent/shortlists/${id}/approve`, { note }),
     reject: (id: number, note?: string) =>
       req<ShortlistJob>("POST", `/enterprise/agent/shortlists/${id}/reject`, { note }),
+  },
+  webhooks: {
+    getConfig: () => req<WebhookConfig | null>("GET", "/enterprise/webhooks/config"),
+    saveConfig: (data: { url: string; enabledEvents?: string[]; enabled?: boolean; description?: string }) =>
+      req<WebhookConfig>("PUT", "/enterprise/webhooks/config", data),
+    deleteConfig: () => req<void>("DELETE", "/enterprise/webhooks/config"),
+    getDeliveries: (limit = 50) => req<WebhookDelivery[]>("GET", `/enterprise/webhooks/deliveries?limit=${limit}`),
+    testEvent: (event: string) => req<{ queued: boolean; event: string; message: string }>("POST", `/enterprise/webhooks/test/${event}`),
+    getEvents: () => req<{ events: string[] }>("GET", "/enterprise/webhooks/events"),
   },
 };
 

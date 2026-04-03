@@ -69,6 +69,7 @@ MatchPoint Enterprise — AI-powered talent intelligence platform.
 - **Skills Gap Analytics** (Phase 3): Aggregate gap/strength frequency from all analyses, score distribution charts, section score radial charts
 - **AI Shortlisting Agent** (Phase 4): Async agentic pipeline — TF-IDF ranks candidates → GPT-5.2 analyses each → ranked shortlist report → HR approves/rejects (human-in-the-loop), full agent step log
 - **RAG Search**: BM25-powered retrieval-augmented generation — resumes chunked by section on upload, BM25 retrieves top chunks, GPT-5.2 generates cited answers. Chat UI with source citations showing candidate name, section, snippet and BM25 score
+- **Phase 5 — n8n Integration Hub**: Webhook engine with HMAC-SHA256 signatures, 3-attempt retry with backoff, per-tenant event filtering; 7 platform events instrumented (candidate.uploaded, shortlist lifecycle, bulk_job.completed); Integrations settings page with delivery log + test buttons; 3 n8n workflow templates (Gmail outreach, Teams approval card, Outlook digest)
 
 ## Key Commands
 

@@ -1,0 +1,75 @@
+{
+  "name": "MatchPoint — Gmail Candidate Outreach on Shortlist Approval",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "matchpoint-shortlist-approved",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "name": "MatchPoint Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "webhookId": "matchpoint-shortlist-approved"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.event }}",
+              "value2": "shortlist.approved"
+            }
+          ]
+        }
+      },
+      "name": "Filter: shortlist.approved",
+      "type": "n8n-nodes-base.if",
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.MATCHPOINT_API_URL }}/enterprise/agent/shortlists/{{ $json.data.shortlistId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "name": "Fetch Shortlist Results",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [690, 220]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "name": "Loop Candidates",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [910, 220]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.candidateEmail }}",
+        "subject": "Exciting opportunity: {{ $node['MatchPoint Webhook'].json.data.jobTitle }}",
+        "message": "Hi {{ $json.candidateName }},\n\nWe were impressed by your profile and would love to discuss an exciting opportunity for the {{ $node['MatchPoint Webhook'].json.data.jobTitle }} role.\n\nPlease reply to this email or use the link below to schedule a call at your convenience.\n\nBest regards,\nThe Recruiting Team",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Send Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "position": [1130, 220]
+    }
+  ],
+  "connections": {
+    "MatchPoint Webhook": { "main": [[{ "node": "Filter: shortlist.approved", "type": "main", "index": 0 }]] },
+    "Filter: shortlist.approved": { "main": [[{ "node": "Fetch Shortlist Results", "type": "main", "index": 0 }]] },
+    "Fetch Shortlist Results": { "main": [[{ "node": "Loop Candidates", "type": "main", "index": 0 }]] },
+    "Loop Candidates": { "main": [[{ "node": "Send Gmail", "type": "main", "index": 0 }]] }
+  },
+  "_meta": {
+    "templateId": "matchpoint-gmail-outreach",
+    "description": "Sends a personalised Gmail to each shortlisted candidate when HR approves a MatchPoint shortlist. Requires: MatchPoint API URL env var, MatchPoint Bearer token credential, Gmail OAuth2 credential."
+  }
+}
