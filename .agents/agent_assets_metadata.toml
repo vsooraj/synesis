@@ -6,3 +6,9 @@ id = "MbthNQz5-Alzs5KyRtgm4"
 uri = "file://PRD.md"
 type = "text"
 title = "MatchPoint — Product Requirements Document"
+
+[[outputs]]
+id = "Udw281mEDJfZ6jXYMR5Qn"
+uri = "file://MatchPoint_Enterprise_PRD.md"
+type = "text"
+title = "MatchPoint Enterprise — PRD"
