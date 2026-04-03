@@ -6,3 +6,4 @@ export * from "./jobDescriptions";
 export * from "./bulkJobs";
 export * from "./auditLog";
 export * from "./shortlistJobs";
+export * from "./resumeChunks";

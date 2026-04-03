@@ -68,6 +68,7 @@ MatchPoint Enterprise — AI-powered talent intelligence platform.
 - **Talent Pool Search** (Phase 3): TF-IDF semantic search across all candidate resumes with best-snippet highlighting
 - **Skills Gap Analytics** (Phase 3): Aggregate gap/strength frequency from all analyses, score distribution charts, section score radial charts
 - **AI Shortlisting Agent** (Phase 4): Async agentic pipeline — TF-IDF ranks candidates → GPT-5.2 analyses each → ranked shortlist report → HR approves/rejects (human-in-the-loop), full agent step log
+- **RAG Search**: BM25-powered retrieval-augmented generation — resumes chunked by section on upload, BM25 retrieves top chunks, GPT-5.2 generates cited answers. Chat UI with source citations showing candidate name, section, snippet and BM25 score
 
 ## Key Commands
 

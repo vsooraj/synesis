@@ -1,10 +1,11 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
 import multer from "multer";
-import { db, resumeProfilesTable } from "@workspace/db";
+import { db, resumeProfilesTable, resumeChunksTable } from "@workspace/db";
 import { requireAuth, type AuthRequest } from "../middleware/auth.js";
 import { logAction } from "../lib/audit.js";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { chunkResume } from "../lib/chunker.js";
 
 const router: IRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -92,8 +93,15 @@ router.post(
         embedding,
       }).returning();
 
-      await logAction(req.user!.tenantId, req.user!.userId, "UPLOAD_RESUME", "resume_profile", profile.id, { fileName, candidateName });
-      res.status(201).json(profile);
+      const chunks = chunkResume(extractedText);
+      if (chunks.length > 0) {
+        await db.insert(resumeChunksTable).values(
+          chunks.map(c => ({ resumeProfileId: profile.id, tenantId: req.user!.tenantId, section: c.section, chunkText: c.chunkText }))
+        );
+      }
+
+      await logAction(req.user!.tenantId, req.user!.userId, "UPLOAD_RESUME", "resume_profile", profile.id, { fileName, candidateName, chunks: chunks.length });
+      res.status(201).json({ ...profile, chunksIndexed: chunks.length });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected server error";
       res.status(500).json({ error: message });

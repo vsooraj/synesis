@@ -212,3 +212,32 @@ export const enterpriseApi = {
       req<ShortlistJob>("POST", `/enterprise/agent/shortlists/${id}/reject`, { note }),
   },
 };
+
+export function getRagStats() {
+  return req<{ totalChunks: number; indexedResumes: number }>("GET", "/enterprise/rag/stats");
+}
+
+export function ragIngestAll() {
+  return req<{ resumes: number; chunks: number }>("POST", "/enterprise/rag/ingest-all");
+}
+
+export interface RagSource {
+  resumeProfileId: number;
+  candidateName: string;
+  candidateEmail: string | null;
+  section: string;
+  snippet: string;
+  bm25Score: number;
+}
+
+export interface RagResult {
+  answer: string;
+  sources: RagSource[];
+  question: string;
+  chunksSearched: number;
+  chunksUsed: number;
+}
+
+export function ragQuery(question: string, topK = 8) {
+  return req<RagResult>("POST", "/enterprise/rag/query", { question, topK });
+}

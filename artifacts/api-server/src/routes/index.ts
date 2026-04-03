@@ -9,6 +9,7 @@ import auditLogRouter from "./auditLog.js";
 import analyticsRouter from "./analytics.js";
 import talentSearchRouter from "./talentSearch.js";
 import agentShortlistRouter from "./agentShortlist.js";
+import ragRouter from "./rag.js";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(auditLogRouter);
 router.use(analyticsRouter);
 router.use(talentSearchRouter);
 router.use(agentShortlistRouter);
+router.use(ragRouter);
 
 export default router;
