@@ -1,0 +1,56 @@
+{
+  "name": "Teams — Send Feedback Request to Interviewers",
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "MatchPoint Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": {
+        "path": "matchpoint-feedback-request",
+        "httpMethod": "POST",
+        "authentication": "headerAuth"
+      },
+      "position": [240, 300]
+    },
+    {
+      "id": "filter-event",
+      "name": "Filter: interview.feedback_requested",
+      "type": "n8n-nodes-base.if",
+      "parameters": {
+        "conditions": {
+          "string": [{ "value1": "={{ $json.event }}", "operation": "equals", "value2": "interview.feedback_requested" }]
+        }
+      },
+      "position": [460, 300]
+    },
+    {
+      "id": "split-interviewers",
+      "name": "Split Interviewers",
+      "type": "n8n-nodes-base.splitInBatches",
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "position": [680, 300]
+    },
+    {
+      "id": "send-teams-dm",
+      "name": "Send Teams DM to Interviewer",
+      "type": "n8n-nodes-base.microsoftTeams",
+      "parameters": {
+        "operation": "create",
+        "resource": "chatMessage",
+        "chatId": "={{ $json.item }}",
+        "contentType": "html",
+        "content": "={{ '<p>👋 Hi! We'd love your feedback on the recent interview for <strong>' + $json.payload.positionTitle + '</strong>.</p><p><strong>Candidate:</strong> ' + ($json.payload.candidateName || 'See MatchPoint for details') + '</p><p><strong>Interview type:</strong> ' + $json.payload.type + '</p><p>Please log into MatchPoint Enterprise to submit your structured feedback. Your input helps us make better hiring decisions. 🙏</p>' }}"
+      },
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "MatchPoint Webhook": { "main": [[{ "node": "Filter: interview.feedback_requested", "type": "main", "index": 0 }]] },
+    "Filter: interview.feedback_requested": { "main": [[{ "node": "Split Interviewers", "type": "main", "index": 0 }]] },
+    "Split Interviewers": { "main": [[{ "node": "Send Teams DM to Interviewer", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
