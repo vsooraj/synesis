@@ -8,7 +8,8 @@
     "build:client": "pnpm --filter client build",
     "build:server": "pnpm --filter server build",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "db:init": "pnpm -C packages/db push && pnpm -C packages/db seed"
   },
   "private": true,
   "devDependencies": {
